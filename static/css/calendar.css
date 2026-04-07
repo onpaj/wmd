@@ -37,9 +37,13 @@
   border-left: 4px solid var(--cal-color, #4CAF50);
   background: color-mix(in srgb, var(--cal-color, #4CAF50) 25%, transparent);
   border-radius: 3px;
-  padding: 0.3rem 0.5rem;
+  padding: 0.4rem 0.6rem;
   margin-bottom: 0.25rem;
   gap: 0.6rem;
+}
+
+.cal-event--multi {
+  border-left: none;
 }
 
 .cal-time-col {
@@ -50,22 +54,39 @@
 }
 
 .cal-time-start {
-  font-size: 0.78rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.3;
 }
 
 .cal-time-end {
-  font-size: 0.68rem;
+  font-size: 0.88rem;
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.3;
 }
 
+.cal-title-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+}
+
 .cal-title {
-  font-size: 0.88rem;
+  font-size: 1.15rem;
   color: rgba(255, 255, 255, 0.95);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  align-self: center;
+}
+
+.cal-location {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  margin-top: 0.1rem;
 }

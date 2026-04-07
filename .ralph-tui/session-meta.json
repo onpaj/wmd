@@ -1,13 +1,14 @@
 {
   "id": "20e7a42e-88d7-41e2-a540-97c498078888",
-  "status": "running",
+  "status": "completed",
   "startedAt": "2026-04-07T06:21:25.494Z",
-  "updatedAt": "2026-04-07T07:00:36.806Z",
+  "updatedAt": "2026-04-07T07:45:53.357Z",
   "agentPlugin": "claude",
   "trackerPlugin": "json",
   "currentIteration": 20,
   "maxIterations": 0,
   "totalTasks": 0,
   "tasksCompleted": 20,
-  "cwd": "/Users/pajgrtondrej/Work/GitHub/DAK"
+  "cwd": "/Users/pajgrtondrej/Work/GitHub/DAK",
+  "endedAt": "2026-04-07T07:45:53.357Z"
 }

@@ -16,6 +16,7 @@ class CalendarEvent(BaseModel):
     all_day: bool
     calendar_name: str
     color: str
+    location: str | None = None
 
 
 class WeatherDay(BaseModel):
@@ -33,10 +34,20 @@ class HaEntity(BaseModel):
     unit: str
 
 
+class Meals(BaseModel):
+    soup_today: str
+    soup_tomorrow: str
+    lunch_today: str
+    lunch_tomorrow: str
+
+
 class DashboardData(BaseModel):
     photos: list[Photo]
     events: list[CalendarEvent]
+    mini_cal_events: list[CalendarEvent]
     weather: list[WeatherDay]
     ha_entities: list[HaEntity]
+    meals: Meals | None
+    outdoor_temp: float | None
     photo_interval_seconds: int
     server_time: datetime

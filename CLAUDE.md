@@ -8,6 +8,8 @@ DAK is a self-hosted wall dashboard for Raspberry Pi (replacing DAKBoard), displ
 
 The project is **specification-driven** — see `tasks/prd-dak-dashboard.md` (user stories) and `docs/superpowers/specs/2026-04-07-dak-dashboard-design.md` (technical design) before implementing anything.
 
+For deployment instructions, see `DEPLOY.md`.
+
 ## Tech Stack
 
 - **Backend:** Python 3.11+, FastAPI, uvicorn, httpx, icalendar, python-dateutil
@@ -16,8 +18,6 @@ The project is **specification-driven** — see `tasks/prd-dak-dashboard.md` (us
 - **Target hardware:** Raspberry Pi, Ubuntu Server 22.04/24.04
 
 ## Commands
-
-Once implemented, the expected commands are:
 
 ```bash
 # Backend
@@ -29,6 +29,9 @@ uvicorn main:app --host 0.0.0.0 --port 3000
 npm install
 npm run build    # esbuild src/app.ts --bundle --outfile=static/js/app.js
 npm run watch    # development watch mode
+
+# Tests
+pytest
 
 # Deploy systemd services
 sudo cp systemd/*.service /etc/systemd/system/
@@ -48,27 +51,117 @@ systemd: dak-browser
   └── Chromium --kiosk http://localhost:3000
 ```
 
-**Backend modules** (`sources/`): `icloud.py`, `calendar.py`, `weather.py`, `homeassistant.py`
+**Backend modules** (`sources/`): `icloud.py`, `calendar.py`, `weather.py`, `homeassistant.py`, `ms365.py`
 **Cache** (`cache.py`): in-memory, per-source TTLs, stale-while-revalidate with background refresh tasks
+
+| Source | Module | TTL |
+|--------|--------|-----|
+| iCloud photos | `sources/icloud.py` | 1 hour |
+| ICS calendars | `sources/calendar.py` | 5 min |
+| Mini-calendar feed | `sources/calendar.py` | 1 hour |
+| Weather forecast | `sources/weather.py` | 30 min |
+| Home Assistant entities | `sources/homeassistant.py` | 1 min |
+| HA meal sensors | `sources/homeassistant.py` | 5 min |
+| HA outdoor temperature | `sources/homeassistant.py` | 1 min |
+| MS365 calendars | `sources/ms365.py` | 5 min |
 
 **Frontend modules** (`src/modules/`): `photo.ts`, `calendar.ts`, `clock.ts`, `weather.ts`, `mini-calendar.ts`
 - `src/app.ts` owns the 60-second polling loop
 - All UI updates are in-place DOM mutations — no page reloads, no flicker
 - `src/api.ts` wraps `GET /api/data`; `src/types.ts` holds shared interfaces
 
+## Implemented Features
+
+### Photo Slideshow
+- Fetches photos from an iCloud shared album via Apple's API
+- Cross-fade transitions between photos (CSS, no flicker)
+- Configurable interval (`photoIntervalSeconds`)
+- Photos served via `/api/photo/:id` proxy to avoid CORS
+
+### Calendar
+- Parses ICS feeds (iCloud, Google Calendar, Outlook, any RFC 5545 source)
+- Supports recurring events with RRULE and EXDATE exclusions
+- Multiple calendars with color-coded borders (gradient for overlapping events)
+- Czech locale: "dnes" / "zítra" day labels; "celý den" for all-day events
+- Shows N days ahead (configurable via `calendarDaysAhead`)
+- Microsoft 365 calendar integration via OAuth2 client credentials (Graph API)
+
+### Mini Calendar
+- 3-week grid (Monday-first), highlights today
+- Up to 3 event color bars per day
+- Separate ICS feed (`miniCalendar.url`)
+
+### Weather Forecast
+- 5-day forecast (configurable via `weatherDays`)
+- Three provider options:
+  - **MET.no** (free, no API key, recommended)
+  - **OpenMeteo** (free, no API key)
+  - **AccuWeather** (requires API key)
+- Emoji weather icons mapped from WMO weather codes
+- High/low temperature, precipitation probability
+- Czech weekday labels
+
+### Clock & Meals
+- Live clock updating every second
+- Outdoor temperature from Home Assistant sensor
+- Meal display (soup + lunch) for today/tomorrow from HA entities
+- Switches to tomorrow's meals after 12:30
+
+### Home Assistant Integration
+- Fetches arbitrary entity states via REST API
+- Dedicated support for meal sensors (soup today/tomorrow, lunch today/tomorrow)
+- Outdoor temperature sensor
+- Concurrent entity fetching; errors are non-fatal
+
 ## Configuration
 
-Runtime config lives in `config.json` (not committed). Structure:
+Runtime config lives in `config.json` (not committed — copy from `config.example.json`). Full structure:
 
 ```json
 {
-  "icloud": { "shareToken": "...", "photoIntervalSeconds": 30 },
-  "calendars": [{ "name": "Family", "url": "https://...", "color": "#4CAF50" }],
-  "weather": { "provider": "openmeteo", "latitude": 50.07, "longitude": 14.43 },
-  "homeAssistant": { "url": "http://homeassistant.local:8123", "token": "...", "entities": [] },
-  "display": { "calendarDaysAhead": 2, "weatherDays": 5 }
+  "icloud": {
+    "shareToken": "...",
+    "photoIntervalSeconds": 30
+  },
+  "calendars": [
+    { "name": "Family", "url": "https://...", "color": "#4CAF50" }
+  ],
+  "weather": {
+    "provider": "metno",
+    "latitude": 50.07,
+    "longitude": 14.43,
+    "accuweatherApiKey": ""
+  },
+  "homeAssistant": {
+    "url": "http://homeassistant.local:8123",
+    "token": "...",
+    "entities": [{ "id": "sensor.foo", "label": "Foo" }],
+    "soupTodayEntityId": "sensor.soup_today",
+    "soupTomorrowEntityId": "sensor.soup_tomorrow",
+    "lunchTodayEntityId": "sensor.lunch_today",
+    "lunchTomorrowEntityId": "sensor.lunch_tomorrow",
+    "outsideTemperature": "sensor.outside_temp"
+  },
+  "display": {
+    "calendarDaysAhead": 2,
+    "weatherDays": 5
+  },
+  "ms365": {
+    "tenantId": "...",
+    "clientId": "...",
+    "clientSecret": "...",
+    "users": [
+      { "email": "user@example.com", "name": "User", "color": "#4CAF50" }
+    ]
+  },
+  "miniCalendar": {
+    "url": "https://...",
+    "color": "#888888"
+  }
 }
 ```
+
+All top-level keys except `icloud`, `calendars`, `weather`, `homeAssistant`, and `display` are optional.
 
 ## Key Design Constraints
 

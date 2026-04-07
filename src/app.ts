@@ -1,6 +1,6 @@
 import { fetchData } from './api';
 import { DashboardData } from './types';
-import { startClock } from './modules/clock';
+import { startClock, updateMeals, updateTemperature } from './modules/clock';
 import { render as renderPhotos } from './modules/photo';
 import { render as renderCalendar } from './modules/calendar';
 import { render as renderWeather } from './modules/weather';
@@ -10,7 +10,9 @@ function update(data: DashboardData): void {
   renderPhotos(data.photos, document.getElementById('photo-area')!, data.photo_interval_seconds);
   renderCalendar(data.events, document.getElementById('calendar-area')!);
   renderWeather(data.weather, document.getElementById('weather-area')!);
-  renderMiniCal(data.events, document.getElementById('mini-cal-area')!);
+  renderMiniCal(data.mini_cal_events, document.getElementById('mini-cal-area')!);
+  updateMeals(data.meals);
+  updateTemperature(data.outdoor_temp !== null ? Math.round(data.outdoor_temp) : null);
 
   const haArea = document.getElementById('ha-area')!;
   if (data.ha_entities.length > 0) {

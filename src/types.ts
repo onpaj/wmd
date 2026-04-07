@@ -11,6 +11,7 @@ export interface CalendarEvent {
   all_day: boolean;
   calendar_name: string;
   color: string;
+  location?: string | null;
 }
 
 export interface WeatherDay {
@@ -28,11 +29,21 @@ export interface HaEntity {
   unit: string;
 }
 
+export interface Meals {
+  soup_today: string;
+  soup_tomorrow: string;
+  lunch_today: string;
+  lunch_tomorrow: string;
+}
+
 export interface DashboardData {
   photos: Photo[];
   events: CalendarEvent[];
+  mini_cal_events: CalendarEvent[];
   weather: WeatherDay[];
   ha_entities: HaEntity[];
+  meals: Meals | null;
+  outdoor_temp: number | null;
   photo_interval_seconds: number;
   server_time: string;
 }

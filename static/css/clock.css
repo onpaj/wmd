@@ -1,9 +1,40 @@
 /* Clock module styles */
 #clock-area {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(3rem, 6vw, 7rem);
-  font-weight: 200;
+  flex-direction: column;
+  padding: 0 2rem;
   color: white;
+}
+
+#clock-top-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#clock-temp {
+  font-size: clamp(3rem, 5.5vw, 6rem);
+  font-weight: 200;
+  line-height: 1;
+}
+
+#clock-time {
+  font-size: clamp(5rem, 10vw, 11rem);
+  font-weight: 200;
+  line-height: 1;
+}
+
+#clock-meals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+#clock-soup,
+#clock-lunch {
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  font-weight: 300;
+  opacity: 0.85;
+  text-align: right;
 }

@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -34,6 +35,17 @@ class HomeAssistantConfig:
     url: str
     token: str
     entities: list[HaEntityConfig]
+    lunch_today_entity_id: str = ""
+    lunch_tomorrow_entity_id: str = ""
+    soup_today_entity_id: str = ""
+    soup_tomorrow_entity_id: str = ""
+    outside_temperature_entity_id: str = ""
+
+
+@dataclass
+class MiniCalendarConfig:
+    url: str
+    color: str
 
 
 @dataclass
@@ -43,12 +55,29 @@ class DisplayConfig:
 
 
 @dataclass
+class Ms365UserConfig:
+    email: str
+    name: str
+    color: str
+
+
+@dataclass
+class Ms365Config:
+    tenant_id: str
+    client_id: str
+    client_secret: str
+    users: list[Ms365UserConfig]
+
+
+@dataclass
 class AppConfig:
     icloud: ICloudConfig
     calendars: list[CalendarConfig]
     weather: WeatherConfig
     home_assistant: HomeAssistantConfig
     display: DisplayConfig
+    mini_calendar: MiniCalendarConfig = field(default_factory=lambda: MiniCalendarConfig(url="", color="#FFC107"))
+    ms365: Optional[Ms365Config] = None
 
 
 def load_config(path: str = "config.json") -> AppConfig:
@@ -79,6 +108,11 @@ def load_config(path: str = "config.json") -> AppConfig:
         url=ha_data["url"],
         token=ha_data["token"],
         entities=[HaEntityConfig(entity_id=e["id"], label=e.get("label", "")) for e in ha_data.get("entities", [])],
+        lunch_today_entity_id=ha_data.get("lunchTodayEntityId", ""),
+        lunch_tomorrow_entity_id=ha_data.get("lunchTomorrowEntityId", ""),
+        soup_today_entity_id=ha_data.get("soupTodayEntityId", ""),
+        soup_tomorrow_entity_id=ha_data.get("soupTomorrowEntityId", ""),
+        outside_temperature_entity_id=ha_data.get("outsideTemperature", ""),
     )
 
     display_data = data["display"]
@@ -87,10 +121,28 @@ def load_config(path: str = "config.json") -> AppConfig:
         weather_days=display_data["weatherDays"],
     )
 
+    mini_cal_data = data.get("miniCalendar", {})
+    mini_calendar = MiniCalendarConfig(
+        url=mini_cal_data.get("url", ""),
+        color=mini_cal_data.get("color", "#FFC107"),
+    )
+
+    ms365 = None
+    if "ms365" in data:
+        m = data["ms365"]
+        ms365 = Ms365Config(
+            tenant_id=m["tenantId"],
+            client_id=m["clientId"],
+            client_secret=m["clientSecret"],
+            users=[Ms365UserConfig(email=u["email"], name=u["name"], color=u["color"]) for u in m.get("users", [])],
+        )
+
     return AppConfig(
         icloud=icloud,
         calendars=calendars,
         weather=weather,
         home_assistant=home_assistant,
         display=display,
+        mini_calendar=mini_calendar,
+        ms365=ms365,
     )

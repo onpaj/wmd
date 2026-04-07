@@ -7,27 +7,28 @@ function mondayFirst(jsDay: number): number {
   return (jsDay + 6) % 7;
 }
 
+function toDateKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
 export function render(events: CalendarEvent[], container: HTMLElement): void {
   container.innerHTML = '';
 
   const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-  const todayDate = today.getDate();
+  const todayKey = toDateKey(today);
 
-  const firstDay = new Date(todayYear, todayMonth, 1);
-  const daysInMonth = new Date(todayYear, todayMonth + 1, 0).getDate();
-  const startOffset = mondayFirst(firstDay.getDay());
+  // Start from Monday of the current week
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - mondayFirst(today.getDay()));
+  weekStart.setHours(0, 0, 0, 0);
 
-  // Build map: day-of-month → unique colors with events
-  const dotMap = new Map<number, Set<string>>();
+  // Build map: dateKey → list of {color, title}
+  const eventMap = new Map<string, Array<{ color: string; title: string }>>();
   for (const ev of events) {
     const d = new Date(ev.start);
-    if (d.getFullYear() === todayYear && d.getMonth() === todayMonth) {
-      const day = d.getDate();
-      if (!dotMap.has(day)) dotMap.set(day, new Set());
-      dotMap.get(day)!.add(ev.color);
-    }
+    const key = toDateKey(d);
+    if (!eventMap.has(key)) eventMap.set(key, []);
+    eventMap.get(key)!.push({ color: ev.color, title: ev.title });
   }
 
   // Header row
@@ -41,41 +42,36 @@ export function render(events: CalendarEvent[], container: HTMLElement): void {
   }
   container.appendChild(header);
 
-  // Grid
+  // Grid: 3 weeks = 21 days
   const grid = document.createElement('div');
   grid.className = 'mini-cal-grid';
 
-  // Empty cells before first day
-  for (let i = 0; i < startOffset; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'mini-cal-cell mini-cal-empty';
-    grid.appendChild(empty);
-  }
+  for (let i = 0; i < 21; i++) {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + i);
+    const dayKey = toDateKey(day);
 
-  for (let day = 1; day <= daysInMonth; day++) {
     const cell = document.createElement('div');
     cell.className = 'mini-cal-cell';
-    if (day === todayDate) cell.classList.add('mini-cal-today');
+    if (dayKey === todayKey) cell.classList.add('mini-cal-today');
 
     const num = document.createElement('span');
     num.className = 'mini-cal-day-num';
-    num.textContent = String(day);
+    num.textContent = String(day.getDate());
     cell.appendChild(num);
 
-    const colors = dotMap.get(day);
-    if (colors && colors.size > 0) {
-      const dots = document.createElement('div');
-      dots.className = 'mini-cal-dots';
-      let count = 0;
-      for (const color of colors) {
-        if (count >= 3) break;
-        const dot = document.createElement('span');
-        dot.className = 'mini-cal-dot';
-        dot.style.background = color;
-        dots.appendChild(dot);
-        count++;
+    const evList = eventMap.get(dayKey);
+    if (evList && evList.length > 0) {
+      const bars = document.createElement('div');
+      bars.className = 'mini-cal-bars';
+      for (const ev of evList.slice(0, 3)) {
+        const bar = document.createElement('div');
+        bar.className = 'mini-cal-bar';
+        bar.style.background = ev.color;
+        bar.textContent = ev.title;
+        bars.appendChild(bar);
       }
-      cell.appendChild(dots);
+      cell.appendChild(bars);
     }
 
     grid.appendChild(cell);

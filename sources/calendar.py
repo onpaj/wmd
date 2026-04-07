@@ -49,6 +49,8 @@ def _parse_ics(
 
         uid = str(component.get("UID", ""))
         summary = str(component.get("SUMMARY", ""))
+        location_raw = component.get("LOCATION")
+        location = str(location_raw) if location_raw else None
 
         if "RRULE" in component:
             # Expand recurring events
@@ -88,6 +90,7 @@ def _parse_ics(
                         all_day=all_day,
                         calendar_name=cal_cfg.name,
                         color=cal_cfg.color,
+                        location=location,
                     )
                 )
         else:
@@ -107,6 +110,7 @@ def _parse_ics(
                     all_day=all_day,
                     calendar_name=cal_cfg.name,
                     color=cal_cfg.color,
+                    location=location,
                 )
             )
 
@@ -127,6 +131,18 @@ async def _fetch_calendar(
         return []
 
 
+async def get_mini_cal_events(cfg: AppConfig) -> list[CalendarEvent]:
+    if not cfg.mini_calendar.url:
+        return []
+    now = _now_utc()
+    window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    window_end = window_start + timedelta(weeks=3)
+
+    cal_cfg = CalendarConfig(name="mini", url=cfg.mini_calendar.url, color=cfg.mini_calendar.color)
+    async with httpx.AsyncClient() as client:
+        return await _fetch_calendar(client, cal_cfg, window_start, window_end)
+
+
 async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
     now = _now_utc()
     window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -141,5 +157,13 @@ async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
     for events in results:
         all_events.extend(events)
 
-    all_events.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
-    return all_events
+    # Clamp start to today for events that began before today but are still ongoing
+    # (e.g. multi-day all-day events) so they appear under today, not a past date.
+    clamped: list[CalendarEvent] = []
+    for ev in all_events:
+        if ev.start < window_start < ev.end:
+            ev = ev.model_copy(update={"start": window_start})
+        clamped.append(ev)
+
+    clamped.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
+    return clamped

@@ -11,7 +11,7 @@
     }
   ],
   "weather": {
-    "provider": "openmeteo",
+    "provider": "metno",
     "latitude": 50.07,
     "longitude": 14.43,
     "accuweatherApiKey": ""

@@ -1,0 +1,145 @@
+import asyncio
+import hashlib
+from datetime import date, datetime, timedelta, timezone
+from typing import Any
+
+import httpx
+from dateutil.rrule import rrulestr
+from icalendar import Calendar
+
+from config import AppConfig, CalendarConfig
+from models import CalendarEvent
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _to_utc_datetime(dt: Any) -> datetime:
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    # date (all-day)
+    return datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
+
+
+def _parse_ics(
+    content: bytes,
+    cal_cfg: CalendarConfig,
+    window_start: datetime,
+    window_end: datetime,
+) -> list[CalendarEvent]:
+    cal = Calendar.from_ical(content)
+    events: list[CalendarEvent] = []
+
+    for component in cal.walk():
+        if component.name != "VEVENT":
+            continue
+
+        dtstart_prop = component.get("DTSTART")
+        if dtstart_prop is None:
+            continue
+        raw_start = dtstart_prop.dt
+
+        dtend_prop = component.get("DTEND") or component.get("DUE")
+        raw_end = dtend_prop.dt if dtend_prop else raw_start
+
+        all_day = isinstance(raw_start, date) and not isinstance(raw_start, datetime)
+
+        uid = str(component.get("UID", ""))
+        summary = str(component.get("SUMMARY", ""))
+
+        if "RRULE" in component:
+            # Expand recurring events
+            rrule_str = component["RRULE"].to_ical().decode()
+            dtstart_dt = _to_utc_datetime(raw_start)
+            dtstart_naive = dtstart_dt.replace(tzinfo=None)
+
+            rule = rrulestr(rrule_str, dtstart=dtstart_naive, ignoretz=True)
+
+            # Collect EXDATE values (naive UTC)
+            exdates: set[datetime] = set()
+            exdate_prop = component.get("EXDATE")
+            if exdate_prop is not None:
+                props = exdate_prop if isinstance(exdate_prop, list) else [exdate_prop]
+                for prop in props:
+                    for exdt in prop.dts:
+                        exdates.add(_to_utc_datetime(exdt.dt).replace(tzinfo=None))
+
+            duration = _to_utc_datetime(raw_end) - dtstart_dt
+
+            for occurrence in rule.between(
+                window_start.replace(tzinfo=None),
+                window_end.replace(tzinfo=None),
+                inc=True,
+            ):
+                if occurrence in exdates:
+                    continue
+                occ_start = occurrence.replace(tzinfo=timezone.utc)
+                occ_end = occ_start + duration
+                event_id = hashlib.md5(f"{uid}-{occ_start.isoformat()}".encode()).hexdigest()
+                events.append(
+                    CalendarEvent(
+                        id=event_id,
+                        title=summary,
+                        start=occ_start,
+                        end=occ_end,
+                        all_day=all_day,
+                        calendar_name=cal_cfg.name,
+                        color=cal_cfg.color,
+                    )
+                )
+        else:
+            start_dt = _to_utc_datetime(raw_start)
+            end_dt = _to_utc_datetime(raw_end)
+
+            if start_dt >= window_end or end_dt <= window_start:
+                continue
+
+            event_id = hashlib.md5(f"{uid}-{start_dt.isoformat()}".encode()).hexdigest()
+            events.append(
+                CalendarEvent(
+                    id=event_id,
+                    title=summary,
+                    start=start_dt,
+                    end=end_dt,
+                    all_day=all_day,
+                    calendar_name=cal_cfg.name,
+                    color=cal_cfg.color,
+                )
+            )
+
+    return events
+
+
+async def _fetch_calendar(
+    client: httpx.AsyncClient,
+    cal_cfg: CalendarConfig,
+    window_start: datetime,
+    window_end: datetime,
+) -> list[CalendarEvent]:
+    try:
+        resp = await client.get(cal_cfg.url)
+        resp.raise_for_status()
+        return _parse_ics(resp.content, cal_cfg, window_start, window_end)
+    except Exception:
+        return []
+
+
+async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
+    now = _now_utc()
+    window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    window_end = window_start + timedelta(days=cfg.display.calendar_days_ahead + 1)
+
+    async with httpx.AsyncClient() as client:
+        results = await asyncio.gather(
+            *[_fetch_calendar(client, cal, window_start, window_end) for cal in cfg.calendars]
+        )
+
+    all_events: list[CalendarEvent] = []
+    for events in results:
+        all_events.extend(events)
+
+    all_events.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
+    return all_events

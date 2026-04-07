@@ -71,3 +71,13 @@ after each iteration and it's included in prompts for context.
   - respx mock with `@respx.mock` decorator works cleanly for async httpx tests alongside `asyncio_mode = auto`
   - Module-level `_photo_url_map` dict acts as a side-channel for guid→real URL lookup, populated on each `get_photos()` call
 ---
+
+## 2026-04-07 - US-007
+- Implemented ICS calendar source in sources/calendar.py with async concurrent fetching, recurring event expansion, and all-day event detection
+- Files created: sources/calendar.py, tests/test_calendar.py, tests/fixtures/simple.ics, tests/fixtures/recurring.ics
+- **Learnings:**
+  - **rrulestr timezone gotcha**: `rrulestr` inherits the tzinfo from `dtstart`. If dtstart is timezone-aware (UTC), `rule.between()` requires aware bounds too. Solution: strip tzinfo before passing to rrulestr (`dtstart_naive = dtstart_dt.replace(tzinfo=None)`) and re-attach UTC when building CalendarEvent.
+  - `mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW)` is the pattern to freeze time in module-level functions without freezegun; the mock replaces the callable so it returns the fixed value directly.
+  - icalendar `DTSTART;VALUE=DATE` produces `datetime.date` (not `datetime.datetime`); checking `isinstance(raw_start, date) and not isinstance(raw_start, datetime)` correctly distinguishes all-day from timed events.
+  - EXDATE properties can be a single `vDDDLists` or a Python list of them; handle both: `props = exdate_prop if isinstance(exdate_prop, list) else [exdate_prop]`.
+---

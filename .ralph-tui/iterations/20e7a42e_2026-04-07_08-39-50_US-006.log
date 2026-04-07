@@ -1,0 +1,66 @@
+# Iteration 6 Log
+
+## Metadata
+
+- **Task ID**: US-006
+- **Task Title**: iCloud Shared Album Photo Source
+- **Description**: As a developer, I need the backend to fetch photos from an iCloud shared album via its undocumented JSON API and proxy them so that the frontend displays photos without CORS issues.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:39:50.070Z
+- **Ended At**: 2026-04-07T06:41:06.305Z
+- **Duration**: 1m 16s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msources/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/main.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mtests/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/requirements.txt[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_api.py[0m
+Now I'll implement the iCloud source and update main.py:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/icloud.py[0m "import httpx
+
+from config import AppConfig
+from models import Photo
+
+_photo_url_map: dict[str, str] = {}
+
+_BASE_URL = "https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+
+
+async def get_photo... (2122 chars)"
+Now update main.py to add the `/api/photo/{photo_id}` proxy endpoint:
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/main.py[0m edit: "from datetime import datetime, timezone
+
+from fast..." → "from datetime import datetime, timezone
+
+import ht..."
+Now write the tests:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_icloud.py[0m "import pytest
+import respx
+import httpx
+
+from config import AppConfig, ICloudConfig, CalendarConfig, WeatherConfig, HomeAssistantConfig, DisplayConfig
+from sources.icloud import get_photos
+
+
+def make_... (2036 chars)"
+[94m[Bash][0m Run iCloud tests $ .venv/bin/pytest tests/test_icloud.py -v 2>&1
+Both tests pass. Let me also run a typecheck to verify:
+[94m[Bash][0m Verify imports work $ print('imports ok')" 2>&1
+Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - `StaticFiles(directory=...)` raises `RuntimeEr..." → "  - `StaticFiles(directory=...)` raises `RuntimeEr..."
+All done. Both tests pass:
+
+- `sources/icloud.py` — `get_photos()` with two-step iCloud API, redirect handling, `_photo_url_map`, and `get_photo_url()`
+- `main.py` — `/api/photo/{photo_id}` proxy with `StreamingResponse`, returns 404 for unknown guids
+- `tests/test_icloud.py` — 2 tests using respx mocks, both passing
+
+<promise>COMPLETE</promise>

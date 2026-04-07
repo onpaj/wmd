@@ -1,0 +1,55 @@
+# Iteration 20 Log
+
+## Metadata
+
+- **Task ID**: US-020
+- **Task Title**: Final Verification
+- **Description**: As a developer, I need to verify that the complete system — all tests, type checks, build, and a manual smoke test — passes before declaring the implementation complete.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:58:55.143Z
+- **Ended At**: 2026-04-07T07:00:36.755Z
+- **Duration**: 1m 41s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+Now let me run all the verification checks in parallel.
+[94m[Bash][0m $ source .venv/bin/activate && pytest -v 2>&1
+[94m[Bash][0m $ npx tsc --noEmit 2>&1 && echo "TYPECHECK_OK"
+[94m[Bash][0m $ npm run build 2>&1 && echo "BUILD_OK"
+All 22 tests pass, typecheck is clean, and build succeeds. Now let me verify the server starts correctly.
+[94m[Bash][0m $ true
+[94m[Bash][0m $ true
+[94m[Bash][0m $ lsof -i :3000 2>/dev/null | head -20
+Port 3000 is already occupied by another process. Let me test our server on a different port to verify it works:
+[94m[Bash][0m $ true
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/main.py[0m
+[94m[Bash][0m $ true
+The startup takes longer (calling external APIs). Let me wait more:
+[94m[Bash][0m $ true
+All checks pass:
+
+- **22 tests pass** (exceeds minimum of 18)
+- **TypeScript typecheck**: clean
+- **Build**: produces `static/js/app.js`
+- **Server**: starts without errors, `GET /api/data` returns valid JSON with all required fields (`photos`, `events`, `weather`, `ha_entities`, `photo_interval_seconds`, `server_time`)
+- **GET /**: HTTP 200
+
+Now let me append to the progress log:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - LightDM autologin config goes in `/etc/lightdm..." → "  - LightDM autologin config goes in `/etc/lightdm..."
+All acceptance criteria verified:
+
+| Check | Result |
+|-------|--------|
+| `pytest -v` | 22 passed (min 18) |
+| `npx tsc --noEmit` | exit 0, no errors |
+| `npm run build` | exit 0, `static/js/app.js` produced |
+| `python3 main.py` | starts without errors |
+| `GET /api/data` | valid JSON with all required fields |
+| `GET /` | HTTP 200 |
+
+<promise>COMPLETE</promise>

@@ -38,7 +38,7 @@ def config_file(tmp_path):
         "homeAssistant": {
             "url": "http://homeassistant.local:8123",
             "token": "ha_token",
-            "entities": [{"entityId": "sensor.temperature", "label": "Temperature"}],
+            "entities": [{"id": "sensor.temperature", "label": "Temperature"}],
         },
         "display": {"calendarDaysAhead": 2, "weatherDays": 5},
     }
@@ -50,16 +50,19 @@ def config_file(tmp_path):
 @respx.mock
 async def test_api_data_returns_real_data(config_file):
     token = "testtoken"
-    base = f"https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+    base = f"https://p01-sharedstreams.icloud.com/{token}/sharedstreams"
 
     # Mock iCloud
     respx.post(f"{base}/webstream").mock(
-        return_value=httpx.Response(200, json={"photos": [{"photoGuid": "guid1"}]})
+        return_value=httpx.Response(
+            200,
+            json={"photos": [{"photoGuid": "guid1", "derivatives": {"2000": {"checksum": "chk1"}}}]},
+        )
     )
     respx.post(f"{base}/webasseturls").mock(
         return_value=httpx.Response(
             200,
-            json={"items": {"guid1": {"url_location": "photos.icloud.com", "url_path": "/photo1.jpg"}}},
+            json={"items": {"chk1": {"url_location": "photos.icloud.com", "url_path": "/photo1.jpg"}}},
         )
     )
 

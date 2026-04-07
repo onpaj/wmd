@@ -39,7 +39,14 @@ export function render(events: CalendarEvent[], container: HTMLElement): void {
 
     const header = document.createElement('div');
     header.className = 'cal-date-header';
-    header.textContent = `${dayNum} ${label}`;
+    const numSpan = document.createElement('span');
+    numSpan.className = 'cal-day-num';
+    numSpan.textContent = dayNum;
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'cal-day-label';
+    labelSpan.textContent = label;
+    header.appendChild(numSpan);
+    header.appendChild(labelSpan);
     container.appendChild(header);
 
     for (const ev of dayEvents) {
@@ -47,19 +54,30 @@ export function render(events: CalendarEvent[], container: HTMLElement): void {
       row.className = 'cal-event';
       row.style.setProperty('--cal-color', ev.color);
 
-      const time = document.createElement('span');
-      time.className = 'cal-time';
+      const timeCol = document.createElement('div');
+      timeCol.className = 'cal-time-col';
+
       if (ev.all_day) {
-        time.textContent = 'celý den';
+        const start = document.createElement('span');
+        start.className = 'cal-time-start';
+        start.textContent = 'celý den';
+        timeCol.appendChild(start);
       } else {
-        time.textContent = `${formatTime(ev.start)} – ${formatTime(ev.end)}`;
+        const start = document.createElement('span');
+        start.className = 'cal-time-start';
+        start.textContent = formatTime(ev.start);
+        const end = document.createElement('span');
+        end.className = 'cal-time-end';
+        end.textContent = formatTime(ev.end);
+        timeCol.appendChild(start);
+        timeCol.appendChild(end);
       }
 
       const title = document.createElement('span');
       title.className = 'cal-title';
       title.textContent = ev.title;
 
-      row.appendChild(time);
+      row.appendChild(timeCol);
       row.appendChild(title);
       container.appendChild(row);
     }

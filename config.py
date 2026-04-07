@@ -78,7 +78,7 @@ def load_config(path: str = "config.json") -> AppConfig:
     home_assistant = HomeAssistantConfig(
         url=ha_data["url"],
         token=ha_data["token"],
-        entities=[HaEntityConfig(entity_id=e["entityId"], label=e.get("label", "")) for e in ha_data.get("entities", [])],
+        entities=[HaEntityConfig(entity_id=e["id"], label=e.get("label", "")) for e in ha_data.get("entities", [])],
     )
 
     display_data = data["display"]

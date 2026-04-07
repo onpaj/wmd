@@ -20,12 +20,17 @@ def make_config(token: str = "testtoken") -> AppConfig:
 @pytest.mark.asyncio
 async def test_get_photos_returns_photo_list():
     token = "testtoken"
-    base = f"https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+    base = f"https://p01-sharedstreams.icloud.com/{token}/sharedstreams"
 
     respx.post(f"{base}/webstream").mock(
         return_value=httpx.Response(
             200,
-            json={"photos": [{"photoGuid": "guid1"}, {"photoGuid": "guid2"}]},
+            json={
+                "photos": [
+                    {"photoGuid": "guid1", "derivatives": {"2000": {"checksum": "chk1"}, "400": {"checksum": "chk1s"}}},
+                    {"photoGuid": "guid2", "derivatives": {"1500": {"checksum": "chk2"}}},
+                ]
+            },
         )
     )
     respx.post(f"{base}/webasseturls").mock(
@@ -33,8 +38,9 @@ async def test_get_photos_returns_photo_list():
             200,
             json={
                 "items": {
-                    "guid1": {"url_location": "photos.icloud.com", "url_path": "/photo1.jpg"},
-                    "guid2": {"url_location": "photos.icloud.com", "url_path": "/photo2.jpg"},
+                    "chk1": {"url_location": "photos.icloud.com", "url_path": "/photo1.jpg"},
+                    "chk1s": {"url_location": "photos.icloud.com", "url_path": "/photo1s.jpg"},
+                    "chk2": {"url_location": "photos.icloud.com", "url_path": "/photo2.jpg"},
                 }
             },
         )
@@ -54,7 +60,7 @@ async def test_get_photos_returns_photo_list():
 @pytest.mark.asyncio
 async def test_get_photos_handles_empty_album():
     token = "testtoken"
-    base = f"https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+    base = f"https://p01-sharedstreams.icloud.com/{token}/sharedstreams"
 
     respx.post(f"{base}/webstream").mock(
         return_value=httpx.Response(200, json={"photos": []})

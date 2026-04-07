@@ -1,0 +1,52 @@
+# Iteration 16 Log
+
+## Metadata
+
+- **Task ID**: US-016
+- **Task Title**: Mini Calendar Module
+- **Description**: As a user, I want a mini month calendar with today highlighted and colored event dots so that I can see where events fall in the current month.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:55:32.510Z
+- **Ended At**: 2026-04-07T06:56:56.151Z
+- **Duration**: 1m 23s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/modules/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/types.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/modules/calendar.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/mini-calendar.css[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+Now I'll create the mini-calendar module and CSS, then update app.ts:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/modules/mini-calendar.ts[0m "import { CalendarEvent } from '../types';
+
+const CZECH_WEEKDAYS = ['po', 'út', 'st', 'čt', 'pá', 'so', 'ne'];
+
+// Returns Monday-first day-of-week index (0=Monday, 6=Sunday)
+function mondayFirst(jsDay... (2586 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/mini-calendar.css[0m "/* Mini-calendar module styles */
+
+#mini-cal-area {
+  padding: 0.5rem;
+  color: #fff;
+}
+
+.mini-cal-header,
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.mi... (896 chars)"
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m edit: "import { render as renderWeather } from './modules..." → "import { render as renderWeather } from './modules..."
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m edit: "  renderWeather(data.weather, document.getElementB..." → "  renderWeather(data.weather, document.getElementB..."
+[94m[Bash][0m Build and typecheck $ npm run build 2>&1 && npx tsc --noEmit 2>&1
+Both build and typecheck pass. Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - `scrollbar-width: none` (Firefox) + `::-webkit..." → "  - `scrollbar-width: none` (Firefox) + `::-webkit..."
+<promise>COMPLETE</promise>

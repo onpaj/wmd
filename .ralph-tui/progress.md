@@ -166,6 +166,15 @@ after each iteration and it's included in prompts for context.
   - `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chrome) both needed for cross-browser hidden scrollbar
 ---
 
+## 2026-04-07 - US-017
+- Completed app.ts: added `update(data: DashboardData)` calling all five renders, inline HA render, and 60s polling loop in `init()`
+- Files changed: src/app.ts
+- **Learnings:**
+  - `setInterval` async callback errors must be caught internally (try/catch inside the callback); `.catch()` on setInterval doesn't work since it returns a number, not a Promise
+  - HA area toggle: `style.display = 'flex'` + `innerHTML` assignment is the minimal in-place update pattern — no helper needed
+  - `startClock` must be called inside `init()` per acceptance criteria (not at module top level)
+---
+
 ## 2026-04-07 - US-016
 - Implemented mini calendar module: month grid with today highlighted and event dots
 - Files created: src/modules/mini-calendar.ts, static/css/mini-calendar.css (updated)

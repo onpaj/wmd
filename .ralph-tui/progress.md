@@ -165,3 +165,14 @@ after each iteration and it's included in prompts for context.
   - `--cal-color` CSS variable set via `row.style.setProperty('--cal-color', ev.color)` — inline style property setProperty is required for custom properties (style.cssText assignment also works but setProperty is cleaner)
   - `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chrome) both needed for cross-browser hidden scrollbar
 ---
+
+## 2026-04-07 - US-016
+- Implemented mini calendar module: month grid with today highlighted and event dots
+- Files created: src/modules/mini-calendar.ts, static/css/mini-calendar.css (updated)
+- Files changed: src/app.ts (added renderMiniCalendar import and call)
+- `npm run build` exits 0, `npx tsc --noEmit` exits 0
+- **Learnings:**
+  - Monday-first offset: `(jsDay + 6) % 7` converts JS `getDay()` (0=Sunday) to Monday=0 index
+  - `new Date(ev.start)` on ISO datetime strings uses local time; comparing `.getMonth()` against current month works correctly for local display
+  - Dot deduplication: `Set<string>` keyed on color, capped at 3 — simple and avoids needing extra logic
+---

@@ -1,1 +1,43 @@
 /* Calendar module styles */
+
+#calendar-area {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#calendar-area::-webkit-scrollbar {
+  display: none;
+}
+
+.cal-date-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  padding-left: 0.5rem;
+}
+
+.cal-event {
+  display: flex;
+  flex-direction: column;
+  border-left: 3px solid var(--cal-color, #4CAF50);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.cal-time {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cal-title {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,53 @@
+# Iteration 13 Log
+
+## Metadata
+
+- **Task ID**: US-013
+- **Task Title**: Photo Crossfade Rotation Module
+- **Description**: As a user, I want the background photo to smoothly rotate through iCloud photos every N seconds with a 1-second crossfade so that there are no blank frames or jarring cuts between photos.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:52:45.449Z
+- **Ended At**: 2026-04-07T06:53:40.373Z
+- **Duration**: 54s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/**/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/types.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/photo.css[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/index.html[0m
+Now I have all the context I need. Let me implement US-013.
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/modules/photo.ts[0m "import { Photo } from '../types';
+
+let _interval: ReturnType<typeof setInterval> | null = null;
+let _currentIntervalSeconds = 0;
+let _photos: Photo[] = [];
+let _index = 0;
+
+function shuffle(arr: Photo... (1828 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/photo.css[0m "#photo-area {
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s eas... (250 chars)"
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m edit: "import { fetchData } from './api';
+import { startC..." → "import { fetchData } from './api';
+import { startC..."
+[94m[Bash][0m Run build and typecheck $ npm run build 2>&1 && npx tsc --noEmit 2>&1
+Both pass. Now update progress.md:
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "## 2026-04-07 - US-012" → "## 2026-04-07 - US-013
+- Implemented photo crossfa..."
+<promise>COMPLETE</promise>

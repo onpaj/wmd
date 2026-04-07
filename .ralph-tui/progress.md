@@ -143,3 +143,14 @@ after each iteration and it's included in prompts for context.
   - `startClock` calls `tick()` immediately before starting the interval to avoid 1-second blank on load
   - `clamp(3rem, 6vw, 7rem)` in CSS provides responsive font sizing without media queries
 ---
+
+## 2026-04-07 - US-014
+- Implemented calendar module with date grouping and Czech labels
+- Files created: src/modules/calendar.ts, static/css/calendar.css (updated)
+- Files changed: src/app.ts (added renderCalendar import and call)
+- `npm run build` exits 0, `npx tsc --noEmit` exits 0
+- **Learnings:**
+  - Czech day labels use `new Date(dateStr).getDay()` on a date-only string — works reliably because Date constructor for YYYY-MM-DD parses as UTC midnight, so getDay() must use UTC methods or adjust; simpler to just build the lookup array indexed by getDay() result
+  - `--cal-color` CSS variable set via `row.style.setProperty('--cal-color', ev.color)` — inline style property setProperty is required for custom properties (style.cssText assignment also works but setProperty is cleaner)
+  - `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chrome) both needed for cross-browser hidden scrollbar
+---

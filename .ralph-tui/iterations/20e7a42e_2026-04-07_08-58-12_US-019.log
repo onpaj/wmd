@@ -1,0 +1,33 @@
+# Iteration 19 Log
+
+## Metadata
+
+- **Task ID**: US-019
+- **Task Title**: README and Deployment Guide
+- **Description**: As a developer, I need a complete README covering Ubuntu Server setup, dependency installation, frontend build, systemd enablement, and config documentation so that the dashboard can be deployed on a ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:58:12.999Z
+- **Ended At**: 2026-04-07T06:58:54.088Z
+- **Duration**: 41s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m**/*.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msystemd/*.service[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.example.json[0m
+Now I'll write the README.md covering all acceptance criteria.
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/README.md[0m "# DAK Dashboard
+
+A self-hosted wall dashboard for Raspberry Pi, replacing DAKBoard. Displays photos, calendars, weather, and Home Assistant sensors on a wall-mounted TV via Chromium kiosk mode.
+
+## Re... (3770 chars)"
+Now verify typecheck still passes:
+[94m[Bash][0m Run TypeScript typecheck $ npx tsc --noEmit 2>&1
+Typecheck passes. Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - `ExecStartPre=/bin/sleep 3` gives the server a..." → "  - `ExecStartPre=/bin/sleep 3` gives the server a..."
+<promise>COMPLETE</promise>

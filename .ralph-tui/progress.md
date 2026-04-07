@@ -202,3 +202,13 @@ after each iteration and it's included in prompts for context.
   - README-only stories require no code changes; typecheck passes trivially since no TS files were modified
   - LightDM autologin config goes in `/etc/lightdm/lightdm.conf` under `[Seat:*]`, not `[Seat:seat0]`, for broadest compatibility
 ---
+
+## 2026-04-07 - US-020
+- Ran full verification pass: all 22 pytest tests pass, TypeScript typecheck clean, npm run build produces static/js/app.js
+- Verified server smoke test: startup takes ~7s (calling external APIs during startup event), then /api/data returns valid JSON with photos/events/weather/ha_entities/photo_interval_seconds/server_time, GET / returns HTTP 200
+- No code changes required — all acceptance criteria already met
+- **Learnings:**
+  - Startup takes longer than expected when external APIs are called during ASGI startup event — wait at least 10s before expecting the server to accept connections in smoke tests
+  - Port 3000 may be occupied by other local services in dev; use a different port (3001) for smoke testing if needed
+  - 22 tests collected (4 more than the 18-test minimum), all green
+---

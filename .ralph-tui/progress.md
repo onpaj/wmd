@@ -29,3 +29,12 @@ after each iteration and it's included in prompts for context.
   - Use `.venv/bin/python3` to run Python in this project (venv at .venv/)
   - `list[Photo]` syntax works fine with Python 3.11+ and pydantic v2
 ---
+
+## 2026-04-07 - US-003
+- Implemented typed config loader using Python dataclasses
+- Files changed: config.py (new), tests/conftest.py (new), tests/test_config.py (new)
+- **Learnings:**
+  - No mypy in requirements.txt; typecheck means syntax/import correctness only for now
+  - camelCase JSON keys are mapped manually in load_config() — no external library needed
+  - pytest conftest.py with tmp_path fixture works well for file-based config tests
+---

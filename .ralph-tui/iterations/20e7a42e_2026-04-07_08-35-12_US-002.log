@@ -1,0 +1,48 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-002
+- **Task Title**: Pydantic Response Models
+- **Description**: As a developer, I need typed Pydantic models for all API response shapes so that the FastAPI endpoint is type-safe and the frontend data contract is explicit.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:35:12.235Z
+- **Ended At**: 2026-04-07T06:35:42.537Z
+- **Duration**: 30s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m*.py[0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m "from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class Photo(BaseModel):
+    id: str
+    url: str
+
+
+class CalendarEvent(BaseModel):
+    id: str
+    title: str
+    start: datetime
+    en... (687 chars)"
+[94m[Bash][0m Verify models import works $ print('models OK')"
+Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "---
+" → "---
+
+## 2026-04-07 - US-002
+- Implemented Pydantic..."
+
+[91m[Error: <tool_use_error>Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String: ---
+</tool_use_error>][0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - config.json is gitignored and copied from conf..." → "  - config.json is gitignored and copied from conf..."
+<promise>COMPLETE</promise>

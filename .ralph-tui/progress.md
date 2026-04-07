@@ -123,3 +123,13 @@ after each iteration and it's included in prompts for context.
   - `#ha-area` needs `display: none` in base.css (not in a separate ha.css) per acceptance criteria
   - CSS grid-template-areas names must not contain hyphens — use `mini-cal` as area name but it works fine in modern browsers
 ---
+
+## 2026-04-07 - US-012
+- Implemented clock module with 1-second interval updating HH:MM display
+- Files created: src/modules/clock.ts
+- Files changed: static/css/clock.css (added #clock-area styles), src/app.ts (import + startClock call)
+- `npm run build` exits 0, `npx tsc --noEmit` exits 0
+- **Learnings:**
+  - `startClock` calls `tick()` immediately before starting the interval to avoid 1-second blank on load
+  - `clamp(3rem, 6vw, 7rem)` in CSS provides responsive font sizing without media queries
+---

@@ -1,4 +1,7 @@
 import { fetchData } from './api';
+import { startClock } from './modules/clock';
+
+startClock(document.getElementById('clock-area')!);
 
 async function init(): Promise<void> {
   const data = await fetchData();

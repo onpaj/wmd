@@ -1,0 +1,102 @@
+# Iteration 11 Log
+
+## Metadata
+
+- **Task ID**: US-011
+- **Task Title**: TypeScript Frontend Scaffold, Types, and HTML Shell
+- **Description**: As a developer, I need the TypeScript project scaffold, shared type definitions, the HTML grid shell, and base CSS so that all frontend modules can be built and compiled incrementally.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:50:24.949Z
+- **Ended At**: 2026-04-07T06:51:48.240Z
+- **Duration**: 1m 23s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m**/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/index.html[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mstatic/css/*.css[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/package.json[0m
+Now I have everything I need. Let me implement all the required files:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/types.ts[0m "export interface Photo {
+  id: string;
+  url: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  all_day: boolean;
+  calendar_name: string;
+  ... (635 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/api.ts[0m "import { DashboardData } from './types';
+
+export async function fetchData(): Promise<DashboardData> {
+  const response = await fetch('/api/data');
+  if (!response.ok) {
+    throw new Error(`Failed to ... (325 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m "import { fetchData } from './api';
+
+async function init(): Promise<void> {
+  const data = await fetchData();
+  console.log('Dashboard data loaded', data.server_time);
+}
+
+init().catch(console.error);
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/index.html[0m "<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DAK Dashboard</title>
+  <link rel="stylesheet" hr... (921 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/base.css[0m "*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+  overflow: h... (775 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/photo.css[0m "/* Photo module styles */
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/calendar.css[0m "/* Calendar module styles */
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/clock.css[0m "/* Clock module styles */
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/weather.css[0m "/* Weather module styles */
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/mini-calendar.css[0m "/* Mini-calendar module styles */
+"
+Now let's run the typecheck and build:
+[94m[Bash][0m TypeScript typecheck $ npx tsc --noEmit 2>&1
+[94m[Bash][0m Build TypeScript bundle $ npm run build 2>&1
+Both pass. Now let's update progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - `respx.mock` decorator works cleanly with `asy..." → "  - `respx.mock` decorator works cleanly with `asy..."
+All done. Here's what was implemented:
+
+- **`src/types.ts`** — `Photo`, `CalendarEvent`, `WeatherDay`, `HaEntity`, `DashboardData` interfaces matching Python models exactly
+- **`src/api.ts`** — `fetchData(): Promise<DashboardData>` fetching `/api/data`, throws on non-OK
+- **`src/app.ts`** — calls `fetchData()` on load
+- **`static/index.html`** — updated with all CSS link tags and containers: `#photo-area` (with `#photo-a`/`#photo-b`), `#calendar-area`, `#clock-area`, `#weather-area`, `#mini-cal-area`, `#ha-area`
+- **`static/css/base.css`** — 2-column/5-row CSS grid with `grid-template-areas`, photo spanning full width at 55vh, `#ha-area` with `display: none`
+- Placeholder CSS files for each module
+
+Both `npx tsc --noEmit` and `npm run build` exit 0.
+
+<promise>COMPLETE</promise>

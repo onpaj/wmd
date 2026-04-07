@@ -1,1 +1,9 @@
 /* Clock module styles */
+#clock-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(3rem, 6vw, 7rem);
+  font-weight: 200;
+  color: white;
+}

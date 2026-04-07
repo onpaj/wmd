@@ -111,3 +111,15 @@ after each iteration and it's included in prompts for context.
   - `ICON_KEYS` maps WMO weather codes to normalized icon strings; `_AW_ICON_KEYS` maps AccuWeather icon IDs 1-44 to the same set
   - `respx.mock` decorator works cleanly with `asyncio_mode = auto` for mocking httpx calls in async tests (same pattern as icloud tests)
 ---
+
+## 2026-04-07 - US-011
+- Implemented TypeScript frontend scaffold: src/types.ts, src/api.ts, updated src/app.ts
+- Created static/index.html with proper grid containers and CSS link tags
+- Created static/css/base.css with 2-column/5-row CSS grid layout using grid-template-areas
+- Created placeholder CSS files: photo.css, calendar.css, clock.css, weather.css, mini-calendar.css
+- `npm run build` exits 0, `npx tsc --noEmit` exits 0
+- **Learnings:**
+  - TS interfaces use `string` for datetime fields (Python datetime serializes to ISO string in JSON)
+  - `#ha-area` needs `display: none` in base.css (not in a separate ha.css) per acceptance criteria
+  - CSS grid-template-areas names must not contain hyphens — use `mini-cal` as area name but it works fine in modern browsers
+---

@@ -4,10 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DAK Dashboard</title>
-  <link rel="stylesheet" href="/static/css/app.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/photo.css" />
+  <link rel="stylesheet" href="/static/css/calendar.css" />
+  <link rel="stylesheet" href="/static/css/clock.css" />
+  <link rel="stylesheet" href="/static/css/weather.css" />
+  <link rel="stylesheet" href="/static/css/mini-calendar.css" />
 </head>
 <body>
-  <div id="app"></div>
+  <div class="dashboard">
+    <div id="photo-area">
+      <img id="photo-a" src="" alt="" />
+      <img id="photo-b" src="" alt="" />
+    </div>
+    <div id="calendar-area"></div>
+    <div id="clock-area"></div>
+    <div id="weather-area"></div>
+    <div id="mini-cal-area"></div>
+    <div id="ha-area"></div>
+  </div>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

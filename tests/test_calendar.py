@@ -109,6 +109,7 @@ async def test_exclude_patterns_case_insensitive():
 
     titles = {e.title for e in events}
     assert "Trh Dka" not in titles
+    assert "Celodení akce" in titles
 
 
 @respx.mock
@@ -144,5 +145,4 @@ async def test_exclude_patterns_filters_recurring_events():
     with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
         events = await get_events(cfg)
 
-    standup_events = [e for e in events if e.title == "Standup"]
-    assert standup_events == []
+    assert events == []

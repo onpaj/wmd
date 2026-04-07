@@ -1,0 +1,439 @@
+{
+  "name": "DAK Dashboard",
+  "description": "Self-hosted wall dashboard for Raspberry Pi — iCloud photos, merged ICS calendars, weather forecast, clock, Home Assistant sensors, served by FastAPI with a TypeScript/esbuild frontend in Chromium kiosk mode.",
+  "branchName": "ralph/dak-dashboard",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project Scaffold",
+      "description": "As a developer, I need a clean project structure with all config and build files so that the rest of the implementation can proceed without setup friction.",
+      "acceptanceCriteria": [
+        "Directories exist: sources/, tests/, src/modules/, static/js/, static/css/, systemd/, docs/superpowers/plans/, docs/superpowers/specs/, tasks/",
+        "sources/__init__.py exists (empty)",
+        "requirements.txt contains pinned versions: fastapi==0.111.0, uvicorn[standard]==0.29.0, httpx==0.27.0, icalendar==5.0.12, python-dateutil==2.9.0, respx==0.21.1, pytest==8.2.0, pytest-asyncio==0.23.7",
+        "package.json has build script: esbuild src/app.ts --bundle --outfile=static/js/app.js --minify and watch script with --watch flag",
+        "package.json devDependencies includes esbuild ^0.20.0 and typescript ^5.4.0",
+        "tsconfig.json exists with target ES2020, strict true, noEmit true, lib [ES2020, DOM]",
+        "config.example.json has all keys: icloud.shareToken, icloud.photoIntervalSeconds, calendars[] (name/url/color), weather (provider/latitude/longitude/accuweatherApiKey), homeAssistant (url/token/entities[]), display (calendarDaysAhead/weatherDays)",
+        "config.json exists (copied from example) and listed in .gitignore",
+        ".gitignore excludes .venv/, __pycache__/, *.pyc, node_modules/, static/js/app.js",
+        "Python venv created at .venv/ and pip install -r requirements.txt exits 0",
+        "npm install exits 0",
+        "All scaffold files committed to git",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Pydantic Response Models",
+      "description": "As a developer, I need typed Pydantic models for all API response shapes so that the FastAPI endpoint is type-safe and the frontend data contract is explicit.",
+      "acceptanceCriteria": [
+        "models.py exists importing BaseModel from pydantic and datetime from datetime",
+        "Photo model has fields: id: str, url: str",
+        "CalendarEvent model has fields: id: str, title: str, start: datetime, end: datetime, all_day: bool, calendar_name: str, color: str",
+        "WeatherDay model has fields: date: str, icon: str, temp_high: float, temp_low: float, precip_percent: int",
+        "HaEntity model has fields: id: str, label: str, state: str, unit: str",
+        "DashboardData model has fields: photos: list[Photo], events: list[CalendarEvent], weather: list[WeatherDay], ha_entities: list[HaEntity], photo_interval_seconds: int, server_time: datetime",
+        "python3 -c \"from models import DashboardData; print('models OK')\" prints 'models OK' with exit code 0",
+        "Committed to git with message: feat: add Pydantic response models",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Config Loading",
+      "description": "As a developer, I need a typed config loader that reads config.json and exposes all values as Python dataclasses so that sources access config via typed attributes rather than raw dict keys.",
+      "acceptanceCriteria": [
+        "config.py contains dataclasses: ICloudConfig, CalendarConfig, WeatherConfig, HaEntityConfig, HomeAssistantConfig, DisplayConfig, AppConfig",
+        "ICloudConfig has share_token: str and photo_interval_seconds: int (mapped from JSON camelCase shareToken)",
+        "WeatherConfig has provider: str, latitude: float, longitude: float, accuweather_api_key: str",
+        "HomeAssistantConfig has url: str, token: str, entities: list[HaEntityConfig]",
+        "DisplayConfig has calendar_days_ahead: int and weather_days: int (mapped from calendarDaysAhead/weatherDays)",
+        "load_config(path: str = 'config.json') -> AppConfig function exists and maps all camelCase JSON keys to snake_case fields",
+        "tests/conftest.py exists with sample_config fixture that writes full config JSON to tmp_path and returns path string",
+        "tests/test_config.py has test_load_config_returns_typed_object asserting cfg.icloud.share_token, cfg.icloud.photo_interval_seconds, cfg.calendars[0].name, cfg.weather.provider, cfg.display.calendar_days_ahead",
+        "pytest tests/test_config.py -v passes (1 test)",
+        "Committed to git with message: feat: add config loader",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "In-Memory TTL Cache",
+      "description": "As a developer, I need a simple in-memory cache with per-key TTLs and stale-value fallback so that /api/data never blocks on an external API call.",
+      "acceptanceCriteria": [
+        "cache.py contains Cache class with set(key: str, value: Any, ttl_seconds: int) -> None method",
+        "Cache.get(key: str, return_stale: bool = False) -> Any: returns None for missing, None for expired (unless return_stale=True), returns value for valid keys",
+        "Cache.is_expired(key: str) -> bool: returns True for missing or expired keys",
+        "Internal storage is dict[str, tuple[Any, float]] using time.monotonic() for expiry",
+        "tests/test_cache.py has 5 tests: test_set_and_get, test_get_missing_returns_none, test_expired_returns_none (TTL=0 sleep 10ms), test_stale_returns_last_value_when_flagged, test_overwrite",
+        "pytest tests/test_cache.py -v passes (5 tests)",
+        "Committed to git with message: feat: in-memory TTL cache",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "FastAPI Skeleton with Mock /api/data",
+      "description": "As a developer, I need a running FastAPI server that serves static/index.html and returns a valid empty /api/data response so that the frontend can be built against a stable contract before real data sources are wired.",
+      "acceptanceCriteria": [
+        "main.py has create_app(config_path: str = 'config.json') -> FastAPI factory function",
+        "main.py has module-level app = create_app() for uvicorn",
+        "GET /api/data returns HTTP 200 with DashboardData JSON: photos:[], events:[], weather:[], ha_entities:[], photo_interval_seconds from config, server_time as UTC ISO string",
+        "GET / and any unknown path serves static/index.html via FileResponse",
+        "StaticFiles mounted at /static/css and /static/js",
+        "pytest.ini exists with [pytest] section and asyncio_mode = auto",
+        "tests/test_api.py has test_api_data_returns_200 (async, ASGITransport, asserts status 200 and all required JSON keys) and test_static_index_served (asserts GET / returns 200)",
+        "static/index.html exists (placeholder)",
+        "pytest tests/test_api.py -v passes (2 tests)",
+        "python3 main.py starts without errors; curl http://localhost:3000/api/data returns valid JSON",
+        "Committed to git with message: feat: FastAPI skeleton with mock /api/data",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "iCloud Shared Album Photo Source",
+      "description": "As a developer, I need the backend to fetch photos from an iCloud shared album via its undocumented JSON API and proxy them so that the frontend displays photos without CORS issues.",
+      "acceptanceCriteria": [
+        "sources/icloud.py has async def get_photos(cfg: AppConfig) -> list[Photo]",
+        "get_photos POSTs {streamCtag: None} to https://p00-sharedstreams.icloud.com/{token}/sharedstreams/webstream with Content-Type: application/json",
+        "If response has X-Apple-MMe-Host header, request is repeated using that host as base URL",
+        "get_photos POSTs photo guids to .../sharedstreams/webasseturls to get download URLs",
+        "Returns list[Photo] where Photo.url = /api/photo/{guid} (not raw iCloud URL)",
+        "Module-level _photo_url_map dict[str, str] stores guid to real iCloud URL; populated on each call",
+        "get_photo_url(photo_id: str) -> str | None function exported from module",
+        "main.py GET /api/photo/{photo_id} uses get_photo_url and proxies bytes via StreamingResponse with correct content-type; returns HTTP 404 if guid unknown",
+        "tests/test_icloud.py has test_get_photos_returns_photo_list (respx mock, asserts 2 photos, Photo.id=='guid1', Photo.url=='/api/photo/guid1') and test_get_photos_handles_empty_album (asserts [])",
+        "pytest tests/test_icloud.py -v passes (2 tests)",
+        "Committed to git with message: feat: iCloud shared album photo source",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Calendar ICS Source with Recurring Events",
+      "description": "As a developer, I need the backend to fetch multiple ICS calendar feeds concurrently, parse all event types including recurring ones, and return a single merged sorted list so that the frontend shows a unified multi-calendar view.",
+      "acceptanceCriteria": [
+        "sources/calendar.py has async def get_events(cfg: AppConfig) -> list[CalendarEvent]",
+        "All ICS URLs fetched concurrently via httpx.AsyncClient (not sequentially)",
+        "Events parsed with icalendar.Calendar.from_ical(); only VEVENT components processed",
+        "All-day events: CalendarEvent.all_day = True when DTSTART.dt is datetime.date not datetime.datetime",
+        "Recurring events with RRULE expanded using dateutil.rrule.rrulestr; EXDATE exclusions applied",
+        "Events filtered to window: today 00:00:00 UTC through today + calendarDaysAhead + 1 days",
+        "Result sorted: primary=event.start.date(), secondary=not all_day (all-day first), tertiary=event.start",
+        "Each event color assigned from CalendarConfig.color of matching calendar",
+        "If any ICS fetch fails, that calendar is silently skipped; others still processed",
+        "tests/fixtures/simple.ics has one timed event (Trh Dka) and one all-day event (Celodení akce)",
+        "tests/fixtures/recurring.ics has a daily recurring Standup event",
+        "tests/test_calendar.py has 4 respx-mocked tests: test_parses_simple_events, test_all_day_events_flagged, test_recurring_events_expanded, test_calendar_color_assigned",
+        "pytest tests/test_calendar.py -v passes (4 tests)",
+        "Committed to git with message: feat: ICS calendar source with recurring event support",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Weather Source — Open-Meteo and AccuWeather Providers",
+      "description": "As a developer, I need a weather provider abstraction with Open-Meteo as the default (no API key) and AccuWeather as a configurable alternative so that the weather widget shows normalized forecasts regardless of provider.",
+      "acceptanceCriteria": [
+        "sources/weather.py defines ICON_KEYS: dict[int, str] mapping WMO codes to: 0-1=sunny, 2=partly-cloudy, 3=cloudy, 45/48=fog, 51-57=rainy, 61-64=rainy, 65=heavy-rain, 66-67=rainy/heavy-rain, 71-77=snow, 80-81=rainy, 82=heavy-rain, 85-86=snow, 95/96/99=storm",
+        "WeatherProvider abstract base class with async def get_forecast(cfg: AppConfig) -> list[WeatherDay]",
+        "OpenMeteoProvider calls https://api.open-meteo.com/v1/forecast with params: latitude, longitude, daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max, timezone=auto, forecast_days=cfg.display.weather_days",
+        "AccuWeatherProvider does two-step: geoposition search for location key, then 5-day daily forecast endpoint",
+        "Both providers return WeatherDay with date (YYYY-MM-DD), icon (normalized key), temp_high, temp_low, precip_percent",
+        "get_forecast(cfg) dispatches to OpenMeteoProvider when cfg.weather.provider='openmeteo', AccuWeatherProvider when 'accuweather'",
+        "_AW_ICON_KEYS dict maps AccuWeather icon IDs 1-44 to normalized keys",
+        "test_openmeteo_returns_5_days: mocks Open-Meteo response, asserts 5 WeatherDay objects",
+        "test_openmeteo_normalizes_icons: asserts WMO 0=sunny, 61=rainy, 71=snow, 95=storm, 45=fog",
+        "test_openmeteo_temps_and_precip: asserts temp_high, temp_low, precip_percent correct values",
+        "test_all_icon_keys_are_valid: all ICON_KEYS values are in {sunny,partly-cloudy,cloudy,rainy,heavy-rain,snow,storm,fog}",
+        "pytest tests/test_weather.py -v passes (4 tests)",
+        "Committed to git with message: feat: weather source with Open-Meteo and AccuWeather providers",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Home Assistant Entity Source",
+      "description": "As a developer, I need the backend to concurrently fetch the state of configured Home Assistant entities so that sensor values appear on the dashboard.",
+      "acceptanceCriteria": [
+        "sources/homeassistant.py has async def get_entities(cfg: AppConfig) -> list[HaEntity]",
+        "Returns [] immediately if cfg.home_assistant.entities is empty (no HTTP calls made)",
+        "All entities fetched concurrently via asyncio.gather()",
+        "Each entity fetched via GET {ha_url}/api/states/{entity_id} with Authorization: Bearer {token} header",
+        "HaEntity built from response: id=entity_id, label=HaEntityConfig.label (from config), state=data['state'], unit=data['attributes']['unit_of_measurement'] (empty string if missing)",
+        "Failed individual entity fetches (non-200, timeout, error) are omitted; other entities still returned",
+        "test_fetches_entity_state: respx mock, asserts state=='22.5', unit=='°C', label=='Obývák'",
+        "test_returns_empty_when_no_entities_configured: sets entities=[], asserts []",
+        "test_skips_unreachable_entity: respx 404 mock, asserts []",
+        "pytest tests/test_homeassistant.py -v passes (3 tests)",
+        "Committed to git with message: feat: Home Assistant entity source",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Wire All Sources into /api/data with Background Cache",
+      "description": "As a developer, I need the /api/data endpoint to return real data from all four sources, fetched eagerly on startup and refreshed in the background, so that every response is instant and never depends on an in-flight external call.",
+      "acceptanceCriteria": [
+        "main.py create_app() uses load_config(config_path) and creates Cache instance per app",
+        "On startup event: all four sources fetched concurrently via asyncio.gather() with TTLs: photos=3600s, events=300s, weather=1800s, ha_entities=60s",
+        "Background asyncio.create_task loops started for each source: sleep(ttl), re-fetch, update cache; stale value kept on error",
+        "GET /api/data reads all keys with return_stale=True; never makes external calls; always returns within 50ms",
+        "tests/test_api_integration.py has test_api_data_returns_real_data: mocks Open-Meteo, iCloud webstream+webasseturls, both ICS feeds, HA API; calls startup; asserts weather has 5 items, weather[0].icon=='sunny', photos has 1 item, photo_interval_seconds==30",
+        "pytest -v (all tests) passes",
+        "curl -s http://localhost:3000/api/data | python3 -m json.tool shows valid JSON with all 6 top-level fields",
+        "Committed to git with message: feat: wire all sources into /api/data with background TTL cache",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "TypeScript Frontend Scaffold, Types, and HTML Shell",
+      "description": "As a developer, I need the TypeScript project scaffold, shared type definitions, the HTML grid shell, and base CSS so that all frontend modules can be built and compiled incrementally.",
+      "acceptanceCriteria": [
+        "src/types.ts exports interfaces Photo (id, url), CalendarEvent (id, title, start, end, all_day, calendar_name, color), WeatherDay (date, icon, temp_high, temp_low, precip_percent), HaEntity (id, label, state, unit), DashboardData (photos, events, weather, ha_entities, photo_interval_seconds, server_time) — field names match Python models exactly",
+        "src/api.ts exports fetchData(): Promise<DashboardData> that fetches /api/data and throws on non-OK response",
+        "static/index.html has link tags for base.css, photo.css, calendar.css, clock.css, weather.css, mini-calendar.css and script tag for /static/js/app.js",
+        "static/index.html has containers: #photo-area (with #photo-a and #photo-b img children), #calendar-area, #clock-area, #weather-area, #mini-cal-area, #ha-area",
+        "static/css/base.css defines .dashboard CSS grid: 2 columns, 5 rows, grid-template-areas with photo spanning full width (55vh), calendar left rows 2-5, clock/weather/mini-cal/ha in right column",
+        ".ha-area has grid-area: ha and display: none by default",
+        "src/app.ts minimal entry point that calls fetchData() on load; compiles without error",
+        "npm run build exits 0 and produces static/js/app.js",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: TypeScript scaffold, shared types, HTML shell, base CSS grid",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Clock Module",
+      "description": "As a user, I want a large digital clock in the top-right area updating every second so that I can always see the current time without any network call.",
+      "acceptanceCriteria": [
+        "src/modules/clock.ts exports startClock(container: HTMLElement): void",
+        "Uses setInterval with 1000ms interval — no fetch or external call",
+        "Each tick sets container.textContent to HH:MM in 24-hour zero-padded format (e.g. 07:43)",
+        "static/css/clock.css styles #clock-area: font-size clamp(3rem, 6vw, 7rem), font-weight 200, centered (flex align/justify center), white color",
+        "src/app.ts updated to import startClock and call startClock(document.getElementById('clock-area')!)",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: clock module",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Photo Crossfade Rotation Module",
+      "description": "As a user, I want the background photo to smoothly rotate through iCloud photos every N seconds with a 1-second crossfade so that there are no blank frames or jarring cuts between photos.",
+      "acceptanceCriteria": [
+        "src/modules/photo.ts exports render(data: Photo[], container: HTMLElement, photoIntervalSeconds: number): void",
+        "Uses two stacked img elements (#photo-a and #photo-b); only one has photo-img--active class at any time",
+        "On rotation: non-active img src set to next URL; on onload, photo-img--active class swapped — CSS opacity transition handles the fade",
+        "First render sets initial photo on #photo-a immediately (no wait for interval)",
+        "Rotation interval timer reset when photoIntervalSeconds changes between calls",
+        "Photo order randomized on first call when photos array changes",
+        "static/css/photo.css: both .photo-img have position absolute, inset 0, width/height 100%, object-fit cover, opacity 0, transition opacity 1s ease-in-out; .photo-img--active has opacity 1",
+        "src/app.ts updated to import renderPhotos and call renderPhotos(data.photos, document.getElementById('photo-area')!, data.photo_interval_seconds)",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: photo crossfade rotation module",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Calendar Module",
+      "description": "As a user, I want to see today's and upcoming calendar events in a scrolling list, grouped by date with color-coded borders, so that I can plan my day at a glance.",
+      "acceptanceCriteria": [
+        "src/modules/calendar.ts exports render(events: CalendarEvent[], container: HTMLElement): void",
+        "container.innerHTML = '' called at start of each render",
+        "Events grouped by date (event.start.slice(0,10)); one date header per group showing day number and Czech label: dnes/zítra/abbreviated weekday (po,út,st,čt,pá,so,ne)",
+        "Each event row has colored left border via CSS variable --cal-color set to event.color",
+        "All-day events show 'celý den' instead of time range; timed events show HH:MM start and end",
+        "static/css/calendar.css: overflow-y auto with scrollbar-width none (no visible scrollbar), dark semi-transparent event background",
+        "src/app.ts updated to import renderCalendar and call renderCalendar(data.events, document.getElementById('calendar-area')!)",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: calendar module with date grouping and Czech labels",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Weather Module",
+      "description": "As a user, I want to see a 5-day weather forecast with icons, high/low temperatures, and precipitation percentage so that I can plan the week ahead.",
+      "acceptanceCriteria": [
+        "src/modules/weather.ts exports render(days: WeatherDay[], container: HTMLElement): void",
+        "container.innerHTML = '' at start of each render",
+        "For each day: shows abbreviated Czech weekday (po,út,st,čt,pá,so,ne), weather emoji, high temp (rounded integer + °), low temp (rounded integer + °), precipitation % (integer + %)",
+        "Icon mapping: sunny=☀️, partly-cloudy=⛅, cloudy=☁️, rainy=🌧, heavy-rain=⛈, snow=❄️, storm=⛈, fog=🌫; unknown=🌡",
+        "static/css/weather.css: 5 days in horizontal flex row; each day as column with icon, temps, precip stacked; precipitation styled in blue (#5b9bd5)",
+        "src/app.ts updated to import renderWeather and call renderWeather(data.weather, document.getElementById('weather-area')!)",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: weather module with 5-day forecast",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Mini Calendar Module",
+      "description": "As a user, I want a mini month calendar with today highlighted and colored event dots so that I can see where events fall in the current month.",
+      "acceptanceCriteria": [
+        "src/modules/mini-calendar.ts exports render(events: CalendarEvent[], container: HTMLElement): void",
+        "Header row shows Czech abbreviated weekdays: po út st čt pá so ne (Monday-first)",
+        "Today's date cell has class mini-cal-today: red circle background (#e53935), white text, bold",
+        "Days with events show up to 3 colored dots (4px circles) below the day number, one per calendar color; duplicate colors collapsed",
+        "First day of month offset correct: Monday=0, Sunday=6 (Monday-first grid)",
+        "static/css/mini-calendar.css: 7-column CSS grid layout, compact cells, dots as small circles",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: mini calendar module with event dots",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Complete app.ts — Polling Loop and HA Widget",
+      "description": "As a user, I want all dashboard widgets to update automatically every 60 seconds without a page reload, and see Home Assistant sensor values below the weather, so that all information stays current.",
+      "acceptanceCriteria": [
+        "src/app.ts has update(data: DashboardData): void that calls all five renders: renderPhotos, renderCalendar, renderWeather, renderMiniCal, and inline HA render",
+        "HA inline render: if data.ha_entities.length > 0, sets #ha-area display='flex' and innerHTML to spans showing 'Label: value unit'; if empty, sets display='none'",
+        "init() in app.ts: calls startClock, awaits initial fetchData() then update(data), then sets setInterval with 60000ms",
+        "setInterval errors caught with console.error — never crashes the page",
+        "renderMiniCal called with (data.events, document.getElementById('mini-cal-area')!)",
+        "npm run build exits 0",
+        "npx tsc --noEmit exits 0",
+        "Committed to git with message: feat: mini calendar module with event dots and complete polling loop",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "systemd Service Files",
+      "description": "As a developer, I need systemd service files for the FastAPI server and Chromium kiosk browser so that both auto-start on RPi boot and restart on crash.",
+      "acceptanceCriteria": [
+        "systemd/dak-server.service has [Unit] After=network.target Wants=network.target; [Service] User=ubuntu, WorkingDirectory=/home/ubuntu/dak, ExecStart=/home/ubuntu/dak/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000, Restart=always, RestartSec=5, StandardOutput=journal, StandardError=journal; [Install] WantedBy=multi-user.target",
+        "systemd/dak-browser.service has [Unit] After=dak-server.service graphical-session.target Wants=graphical-session.target; [Service] User=ubuntu, DISPLAY=:0, XAUTHORITY=/home/ubuntu/.Xauthority, ExecStartPre=/bin/sleep 3, ExecStart=/usr/bin/chromium-browser with flags --kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-translate --disable-features=Translate http://localhost:3000, Restart=always, RestartSec=5; [Install] WantedBy=graphical-session.target",
+        "Both files have a comment noting ubuntu should be replaced with pi on Raspberry Pi OS",
+        "Committed to git with message: feat: systemd service files for server and kiosk browser",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "README and Deployment Guide",
+      "description": "As a developer, I need a complete README covering Ubuntu Server setup, dependency installation, frontend build, systemd enablement, and config documentation so that the dashboard can be deployed on a fresh RPi from scratch.",
+      "acceptanceCriteria": [
+        "README.md has Requirements section: RPi + Ubuntu Server 22.04+, Python 3.11+, Node.js 18+, Chromium, unclutter",
+        "Setup Step 1 — system deps: sudo apt install -y chromium-browser unclutter xorg lightdm",
+        "Setup Step 2 — clone and configure: git clone, cp config.example.json config.json, edit config",
+        "Setup Step 3 — Python deps: python3 -m venv .venv, source .venv/bin/activate, pip install -r requirements.txt",
+        "Setup Step 4 — build frontend: npm install && npm run build",
+        "Setup Step 5 — systemd: sudo cp systemd/*.service /etc/systemd/system/, daemon-reload, enable + start both services",
+        "Setup Step 6 — auto-login: set graphical.target as default, configure lightdm.conf autologin-user=ubuntu",
+        "Updating config section: edit config.json then sudo systemctl restart dak-server (no rebuild)",
+        "Updating frontend section: npm run build then sudo systemctl restart dak-server",
+        "Calendar ICS URLs section: how to get ICS links from iCloud, Google, MS365/Outlook",
+        "iCloud Share Token section: how to extract token from share URL",
+        "Logs section: journalctl -u dak-server -f and journalctl -u dak-browser -f",
+        "Committed to git with message: docs: deployment guide and setup README",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Final Verification",
+      "description": "As a developer, I need to verify that the complete system — all tests, type checks, build, and a manual smoke test — passes before declaring the implementation complete.",
+      "acceptanceCriteria": [
+        "pytest -v passes all tests (minimum 18 tests: test_cache x5, test_config x1, test_calendar x4, test_weather x4, test_icloud x2, test_homeassistant x3, test_api x2, test_api_integration x1)",
+        "npx tsc --noEmit exits 0 with no TypeScript errors",
+        "npm run build exits 0 and produces static/js/app.js",
+        "python3 main.py starts without errors; curl -s http://localhost:3000/api/data | python3 -m json.tool shows valid JSON with photos, events, weather, ha_entities, photo_interval_seconds, server_time",
+        "curl http://localhost:3000/ returns HTTP 200",
+        "Final commit: git add -A && git commit -m 'chore: final verification pass'",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-07T06:35:11.157Z"
+  }
+}

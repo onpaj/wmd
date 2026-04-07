@@ -1,0 +1,13 @@
+{
+  "name": "dak-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/app.ts --bundle --outfile=static/js/app.js --minify",
+    "watch": "esbuild src/app.ts --bundle --outfile=static/js/app.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  }
+}

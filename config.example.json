@@ -1,0 +1,28 @@
+{
+  "icloud": {
+    "shareToken": "",
+    "photoIntervalSeconds": 30
+  },
+  "calendars": [
+    {
+      "name": "Family",
+      "url": "https://example.com/calendar.ics",
+      "color": "#4CAF50"
+    }
+  ],
+  "weather": {
+    "provider": "openmeteo",
+    "latitude": 50.07,
+    "longitude": 14.43,
+    "accuweatherApiKey": ""
+  },
+  "homeAssistant": {
+    "url": "http://homeassistant.local:8123",
+    "token": "",
+    "entities": []
+  },
+  "display": {
+    "calendarDaysAhead": 2,
+    "weatherDays": 5
+  }
+}

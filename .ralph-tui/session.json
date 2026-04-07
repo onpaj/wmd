@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "sessionId": "20e7a42e-88d7-41e2-a540-97c498078888",
+  "status": "running",
+  "startedAt": "2026-04-07T06:21:25.950Z",
+  "updatedAt": "2026-04-07T06:35:11.159Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "claude",
+  "trackerState": {
+    "plugin": "json",
+    "totalTasks": 0,
+    "tasks": []
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/pajgrtondrej/Work/GitHub/DAK",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}

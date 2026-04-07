@@ -194,3 +194,11 @@ after each iteration and it's included in prompts for context.
   - `After=dak-server.service graphical-session.target` and `Wants=graphical-session.target` ensures browser waits for both the server and the X session
   - `ExecStartPre=/bin/sleep 3` gives the server a few extra seconds to bind its port before Chromium tries to connect
 ---
+
+## 2026-04-07 - US-019
+- Created README.md with full deployment guide
+- Files created: README.md
+- **Learnings:**
+  - README-only stories require no code changes; typecheck passes trivially since no TS files were modified
+  - LightDM autologin config goes in `/etc/lightdm/lightdm.conf` under `[Seat:*]`, not `[Seat:seat0]`, for broadest compatibility
+---

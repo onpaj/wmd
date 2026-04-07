@@ -1,0 +1,45 @@
+# Iteration 18 Log
+
+## Metadata
+
+- **Task ID**: US-018
+- **Task Title**: systemd Service Files
+- **Description**: As a developer, I need systemd service files for the FastAPI server and Chromium kiosk browser so that both auto-start on RPi boot and restart on crash.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:57:34.849Z
+- **Ended At**: 2026-04-07T06:58:11.933Z
+- **Duration**: 37s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msystemd/**[0m
+The `systemd/` directory doesn't exist yet. I'll create both service files now.
+[94m[Bash][0m Create systemd directory $ mkdir -p /Users/pajgrtondrej/Work/GitHub/DAK/systemd
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/systemd/dak-server.service[0m "# NOTE: Replace 'ubuntu' with 'pi' on Raspberry Pi OS
+[Unit]
+Description=DAK Dashboard Server
+After=network.target
+Wants=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/dak
+ExecSta... (385 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/systemd/dak-browser.service[0m "# NOTE: Replace 'ubuntu' with 'pi' on Raspberry Pi OS
+[Unit]
+Description=DAK Dashboard Kiosk Browser
+After=dak-server.service graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+User=ub... (576 chars)"
+Now run typecheck to confirm it still passes:
+[94m[Bash][0m Run TypeScript typecheck $ npx tsc --noEmit
+Typecheck passes. Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - Dot deduplication: `Set<string>` keyed on colo..." → "  - Dot deduplication: `Set<string>` keyed on colo..."
+<promise>COMPLETE</promise>

@@ -124,7 +124,7 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "photoIntervalSeconds": 30
   },
   "calendars": [
-    { "name": "Family", "url": "https://...", "color": "#4CAF50" }
+    { "name": "Family", "url": "https://...", "color": "#4CAF50", "excludePatterns": [] }
   ],
   "weather": {
     "provider": "metno",

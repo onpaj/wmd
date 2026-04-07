@@ -82,3 +82,67 @@ async def test_calendar_color_assigned():
         events = await get_events(cfg)
 
     assert all(e.color == "#4CAF50" for e in events)
+
+
+@respx.mock
+async def test_exclude_patterns_removes_matching_event():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+    cfg.calendars[0] = CalendarConfig(name="Test Cal", url=CAL_URL, color="#FF0000", exclude_patterns=["trh"])
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    titles = {e.title for e in events}
+    assert "Trh Dka" not in titles
+    assert "Celodení akce" in titles
+
+
+@respx.mock
+async def test_exclude_patterns_case_insensitive():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+    cfg.calendars[0] = CalendarConfig(name="Test Cal", url=CAL_URL, color="#FF0000", exclude_patterns=["TRH"])
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    titles = {e.title for e in events}
+    assert "Trh Dka" not in titles
+
+
+@respx.mock
+async def test_exclude_patterns_multiple_patterns():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+    cfg.calendars[0] = CalendarConfig(name="Test Cal", url=CAL_URL, color="#FF0000", exclude_patterns=["trh", "celodení"])
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    assert events == []
+
+
+@respx.mock
+async def test_exclude_patterns_no_patterns_keeps_all_events():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+    # exclude_patterns defaults to [] — no filtering
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    assert len(events) == 2
+
+
+@respx.mock
+async def test_exclude_patterns_filters_recurring_events():
+    respx.get(RECURRING_URL).mock(return_value=httpx.Response(200, content=RECURRING_ICS))
+    cfg = make_config(url=RECURRING_URL, calendar_days_ahead=2)
+    cfg.calendars[0] = CalendarConfig(name="Test Cal", url=RECURRING_URL, color="#FF0000", exclude_patterns=["standup"])
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    standup_events = [e for e in events if e.title == "Standup"]
+    assert standup_events == []

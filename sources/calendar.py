@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -32,6 +33,7 @@ def _parse_ics(
 ) -> list[CalendarEvent]:
     cal = Calendar.from_ical(content)
     events: list[CalendarEvent] = []
+    compiled = [re.compile(p, re.IGNORECASE) for p in cal_cfg.exclude_patterns]
 
     for component in cal.walk():
         if component.name != "VEVENT":
@@ -51,6 +53,9 @@ def _parse_ics(
         summary = str(component.get("SUMMARY", ""))
         location_raw = component.get("LOCATION")
         location = str(location_raw) if location_raw else None
+
+        if compiled and any(rx.search(summary) for rx in compiled):
+            continue
 
         if "RRULE" in component:
             # Expand recurring events

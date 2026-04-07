@@ -82,6 +82,16 @@ after each iteration and it's included in prompts for context.
   - EXDATE properties can be a single `vDDDLists` or a Python list of them; handle both: `props = exdate_prop if isinstance(exdate_prop, list) else [exdate_prop]`.
 ---
 
+## 2026-04-07 - US-009
+- Implemented Home Assistant entity source with concurrent fetching via asyncio.gather()
+- Files created: sources/homeassistant.py, tests/test_homeassistant.py
+- Files changed: config.py (added `label` field to HaEntityConfig, updated loader)
+- **Learnings:**
+  - `HaEntityConfig` needed a `label` field added (was missing from initial scaffold)
+  - `_fetch_entity` helper returns `HaEntity | None`; None results filtered after `asyncio.gather()` — clean pattern for concurrent partial failures
+  - `unit_of_measurement` may be absent or None; `or ""` handles both cases
+---
+
 ## 2026-04-07 - US-008
 - Implemented weather source with Open-Meteo and AccuWeather providers
 - Files created: sources/weather.py, tests/test_weather.py

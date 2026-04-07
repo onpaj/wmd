@@ -1,0 +1,57 @@
+# Iteration 8 Log
+
+## Metadata
+
+- **Task ID**: US-008
+- **Task Title**: Weather Source — Open-Meteo and AccuWeather Providers
+- **Description**: As a developer, I need a weather provider abstraction with Open-Meteo as the default (no API key) and AccuWeather as a configurable alternative so that the weather widget shows normalized forecasts re...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:44:39.940Z
+- **Ended At**: 2026-04-07T06:45:50.858Z
+- **Duration**: 1m 10s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msources/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mtests/test_*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/icloud.py[0m
+Now I have enough context to implement. Let me write `sources/weather.py` and `tests/test_weather.py`:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/weather.py[0m "from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+import httpx
+
+from config import AppConfig
+
+ICON_KEYS: dict[int, str] = {
+    0: "sunny",
+    1: "sunny",
+    2: "partly-cloudy",... (4806 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_weather.py[0m "import pytest
+import respx
+import httpx
+
+from config import AppConfig, WeatherConfig, DisplayConfig, ICloudConfig, CalendarConfig, HomeAssistantConfig
+from sources.weather import get_forecast, ICON_KE... (2665 chars)"
+[94m[Bash][0m Run weather tests $ .venv/bin/python -m pytest tests/test_weather.py -v 2>&1
+All 4 tests pass. Now let me do a quick typecheck and update the progress file:
+[94m[Bash][0m Verify module imports cleanly $ print('import ok')"
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "---
+" → "---
+
+## 2026-04-07 - US-008
+- Implemented weather ..."
+
+[91m[Error: <tool_use_error>Found 8 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String: ---
+</tool_use_error>][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - EXDATE properties can be a single `vDDDLists` ..." → "  - EXDATE properties can be a single `vDDDLists` ..."
+All 4 tests pass, module imports cleanly.
+
+<promise>COMPLETE</promise>

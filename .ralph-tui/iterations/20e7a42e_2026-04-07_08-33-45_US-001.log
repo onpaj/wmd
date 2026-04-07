@@ -1,0 +1,96 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Project Scaffold
+- **Description**: As a developer, I need a clean project structure with all config and build files so that the rest of the implementation can proceed without setup friction.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:33:45.088Z
+- **Ended At**: 2026-04-07T06:35:11.156Z
+- **Duration**: 1m 26s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Bash][0m Check project structure and progress $ ls /Users/pajgrtondrej/Work/GitHub/DAK/ && cat /Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progre...
+[94m[Bash][0m List all files in project $ find /Users/pajgrtondrej/Work/GitHub/DAK -type f | sort
+Now I'll create all the scaffold files. Let me do this efficiently:
+[94m[Bash][0m Create required directories $ mkdir -p sources tests src/modules static/js static/css systemd docs/superpowers/plans docs/superpow...
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/__init__.py[0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/requirements.txt[0m "fastapi==0.111.0
+uvicorn[standard]==0.29.0
+httpx==0.27.0
+icalendar==5.0.12
+python-dateutil==2.9.0
+respx==0.21.1
+pytest==8.2.0
+pytest-asyncio==0.23.7
+"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/package.json[0m "{
+  "name": "dak-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/app.ts --bundle --outfile=static/js/app.js --minify",
+    "watch": "esbuild src/app.ts --... (330 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tsconfig.json[0m "{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop":... (242 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.example.json[0m "{
+  "icloud": {
+    "shareToken": "",
+    "photoIntervalSeconds": 30
+  },
+  "calendars": [
+    {
+      "name": "Family",
+      "url": "https://example.com/calendar.ics",
+      "color": "#4CAF50"
+    }... (508 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.gitignore[0m ".venv/
+__pycache__/
+*.pyc
+node_modules/
+static/js/app.js
+config.json
+"
+[94m[Bash][0m Copy config.example.json to config.json $ cp /Users/pajgrtondrej/Work/GitHub/DAK/config.example.json /Users/pajgrtondrej/Work/GitHub/DAK/confi...
+Now create a minimal `src/app.ts` so typecheck has something to check, then install dependencies:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m "// DAK Dashboard entry point
+export {};
+"
+[94m[Bash][0m Create venv and install Python deps $ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt 2>&1 | tail -5
+[94m[Bash][0m Install npm dependencies $ npm install 2>&1 | tail -5
+Both installed successfully. Now run typecheck:
+[94m[Bash][0m Run TypeScript typecheck $ npx tsc --noEmit 2>&1
+Typecheck passes. Now update progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "---
+
+" → "---
+
+## 2026-04-07 - US-001
+- Implemented full pro..."
+All acceptance criteria met:
+- All required directories created
+- `sources/__init__.py` exists (empty)
+- `requirements.txt` with all pinned versions
+- `package.json` with build/watch scripts and correct devDependencies
+- `tsconfig.json` with ES2020 target, strict, noEmit, correct lib
+- `config.example.json` with all required keys
+- `config.json` copied from example, listed in `.gitignore`
+- `.gitignore` excludes all required patterns
+- Python venv created and `pip install` exits 0
+- `npm install` exits 0
+- TypeScript typecheck passes
+
+<promise>COMPLETE</promise>

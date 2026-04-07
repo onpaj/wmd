@@ -3,10 +3,10 @@
   "sessionId": "20e7a42e-88d7-41e2-a540-97c498078888",
   "status": "running",
   "startedAt": "2026-04-07T06:21:25.950Z",
-  "updatedAt": "2026-04-07T06:35:11.159Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-04-07T06:35:42.541Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -14,7 +14,18 @@
     "totalTasks": 0,
     "tasks": []
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "US-001",
+      "taskTitle": "Project Scaffold",
+      "taskCompleted": true,
+      "durationMs": 86068,
+      "startedAt": "2026-04-07T06:33:45.088Z",
+      "endedAt": "2026-04-07T06:35:11.156Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/pajgrtondrej/Work/GitHub/DAK",
   "activeTaskIds": [],

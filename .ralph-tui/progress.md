@@ -21,3 +21,11 @@ after each iteration and it's included in prompts for context.
   - src/app.ts must exist (even as a stub) for tsc to have something to check
   - config.json is gitignored and copied from config.example.json
 ---
+
+## 2026-04-07 - US-002
+- Implemented Pydantic response models in models.py
+- Files changed: models.py (new)
+- **Learnings:**
+  - Use `.venv/bin/python3` to run Python in this project (venv at .venv/)
+  - `list[Photo]` syntax works fine with Python 3.11+ and pydantic v2
+---

@@ -5,7 +5,7 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
-*Add reusable patterns discovered during development here.*
+- **pytest pythonpath**: `pytest.ini` with `pythonpath = .` is required to import root-level modules (cache.py, config.py, etc.) from tests/. Without it, `from cache import Cache` fails with ModuleNotFoundError.
 
 ---
 
@@ -37,4 +37,13 @@ after each iteration and it's included in prompts for context.
   - No mypy in requirements.txt; typecheck means syntax/import correctness only for now
   - camelCase JSON keys are mapped manually in load_config() — no external library needed
   - pytest conftest.py with tmp_path fixture works well for file-based config tests
+---
+
+## 2026-04-07 - US-004
+- Implemented in-memory TTL cache using `time.monotonic()` for expiry
+- Files changed: cache.py (new), tests/test_cache.py (new), pytest.ini (new)
+- **Learnings:**
+  - pytest.ini with `pythonpath = .` is needed so tests can import root-level modules
+  - `time.monotonic()` is preferred over `time.time()` for TTL expiry (immune to clock adjustments)
+  - TTL=0 entries expire immediately; a 10ms sleep reliably triggers expiry in tests
 ---

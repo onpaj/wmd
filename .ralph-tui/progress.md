@@ -47,3 +47,15 @@ after each iteration and it's included in prompts for context.
   - `time.monotonic()` is preferred over `time.time()` for TTL expiry (immune to clock adjustments)
   - TTL=0 entries expire immediately; a 10ms sleep reliably triggers expiry in tests
 ---
+
+## 2026-04-07 - US-005
+- Implemented FastAPI skeleton with mock /api/data endpoint
+- Files created: main.py, static/index.html, tests/test_api.py
+- Files changed: pytest.ini (added asyncio_mode = auto)
+- **Learnings:**
+  - `asyncio_mode = auto` in pytest.ini allows async test functions without `@pytest.mark.asyncio` decorator
+  - `ASGITransport` from httpx is the correct way to test FastAPI apps without a running server; use `httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test")`
+  - FastAPI catch-all route `/{full_path:path}` must be defined AFTER specific routes (like /api/data) and static mounts to avoid shadowing them
+  - `create_app(config_path)` factory pattern lets tests inject a temp config file, avoiding dependency on real config.json at test time
+  - `StaticFiles(directory=...)` raises `RuntimeError` if the directory doesn't exist at mount time — directories must exist before app startup
+---

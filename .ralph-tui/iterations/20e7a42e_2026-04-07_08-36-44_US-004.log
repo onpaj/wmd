@@ -1,0 +1,88 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-004
+- **Task Title**: In-Memory TTL Cache
+- **Description**: As a developer, I need a simple in-memory cache with per-key TTLs and stale-value fallback so that /api/data never blocks on an external API call.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:36:44.556Z
+- **Ended At**: 2026-04-07T06:37:55.059Z
+- **Duration**: 1m 10s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mcache.py[0m
+No `cache.py` in the project root yet. Let me implement it.
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/cache.py[0m "import time
+from typing import Any
+
+
+class Cache:
+    def __init__(self) -> None:
+        self._store: dict[str, tuple[Any, float]] = {}
+
+    def set(self, key: str, value: Any, ttl_seconds: int) -> N... (787 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_cache.py[0m "import time
+
+from cache import Cache
+
+
+def test_set_and_get() -> None:
+    c = Cache()
+    c.set("key", "value", ttl_seconds=10)
+    assert c.get("key") == "value"
+
+
+def test_get_missing_returns_none(... (785 chars)"
+[94m[Bash][0m Run cache tests $ .venv/bin/pytest tests/test_cache.py -v 2>&1
+
+[91m[Error: Exit code 2
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-8.2.0, pluggy-1.6.0 -- /Users/pajgrtondrej/Work/GitHub/DAK/.venv/bin/python3.14
+cachedir: .pytest_cache
+rootdir: /Users/pajgrtondrej/Work/GitHub/DAK
+plugins: respx-0.21.1, asyncio-0.23.7, anyio-4.13.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_____________________ ERROR collecting tests/test_cache.py _____________________
+ImportError while importing test module '/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_cache.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_cache.py:3: in <module>
+    from cache import Cache
+E   ModuleNotFoundError: No module named 'cache'
+=========================== short test summary info ============================
+ERROR tests/test_cache.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.04s ===============================][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/conftest.py[0m
+[94m[Bash][0m Check pytest config $ cat /Users/pajgrtondrej/Work/GitHub/DAK/setup.cfg 2>/dev/null || cat /Users/pajgrtondrej/Work/GitHub...
+[94m[Bash][0m Check how test_config.py runs to understand import resolution $ .venv/bin/pytest tests/test_config.py -v 2>&1 | head -20
+[94m[Bash][0m List tests directory $ ls /Users/pajgrtondrej/Work/GitHub/DAK/tests/
+I need to add a `pytest.ini` or `conftest.py` at root level to add the project root to sys.path.
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/pytest.ini[0m "[pytest]
+pythonpath = .
+"
+[94m[Bash][0m Run cache tests $ .venv/bin/pytest tests/test_cache.py -v 2>&1
+5 tests pass. Let me also verify typecheck still works:
+[94m[Bash][0m Verify cache module imports cleanly $ print('OK')" 2>&1
+Now update progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "## Codebase Patterns (Study These First)
+
+*Add reu..." → "## Codebase Patterns (Study These First)
+
+- **pyte..."
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - pytest conftest.py with tmp_path fixture works..." → "  - pytest conftest.py with tmp_path fixture works..."
+All 5 tests pass. `cache.py` implements `Cache` with `set`, `get`, and `is_expired` using `dict[str, tuple[Any, float]]` and `time.monotonic()`. Added `pytest.ini` with `pythonpath = .` to fix module imports from tests.
+
+<promise>COMPLETE</promise>

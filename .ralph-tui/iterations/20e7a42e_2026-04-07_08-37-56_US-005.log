@@ -1,0 +1,91 @@
+# Iteration 5 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: FastAPI Skeleton with Mock /api/data
+- **Description**: As a developer, I need a running FastAPI server that serves static/index.html and returns a valid empty /api/data response so that the frontend can be built against a stable contract before real data ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:37:56.130Z
+- **Ended At**: 2026-04-07T06:39:49.001Z
+- **Duration**: 1m 52s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Skill][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m**/*.py[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m*.py[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mtests/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/pytest.ini[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.example.json[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/requirements.txt[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mstatic/**[0m
+[94m[Bash][0m Check if static directory exists $ ls /Users/pajgrtondrej/Work/GitHub/DAK/static/ 2>/dev/null || echo "NOT FOUND"
+[94m[ToolSearch][0m query: [93mselect:TodoWrite[0m
+[94m[TodoWrite][0m
+**Step 1: Write the failing tests first (RED)**
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_api.py[0m "import json
+import pytest
+import httpx
+from httpx import ASGITransport
+
+
+@pytest.fixture
+def config_file(tmp_path):
+    config = {
+        "icloud": {"shareToken": "", "photoIntervalSeconds": 30},
+   ... (1387 chars)"
+**Verify RED — tests should fail because main.py doesn't exist:**
+[94m[Bash][0m Run tests to verify they fail (RED) $ .venv/bin/pytest tests/test_api.py -v 2>&1 | head -40
+Tests fail correctly — `ModuleNotFoundError: No module named 'main'`. Now implement.
+[94m[TodoWrite][0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/pytest.ini[0m edit: "[pytest]
+pythonpath = ." → "[pytest]
+pythonpath = .
+asyncio_mode = auto"
+[94m[TodoWrite][0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/index.html[0m "<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DAK Dashboard</title>
+  <link rel="stylesheet" hr... (326 chars)"
+[94m[TodoWrite][0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/main.py[0m "from datetime import datetime, timezone
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from config import load_config
+from models ... (1148 chars)"
+[94m[TodoWrite][0m
+**Step 4: Verify GREEN**
+[94m[Bash][0m Run tests to verify GREEN $ .venv/bin/pytest tests/test_api.py -v 2>&1
+2 tests pass. Let me also verify the existing tests still pass and check `python3 main.py` starts without errors:
+[94m[Bash][0m Run all other tests to check nothing is broken $ .venv/bin/pytest tests/ -v --ignore=tests/test_api.py 2>&1 | tail -10
+[94m[Bash][0m Verify main.py imports without errors $ print('OK')"
+All 8 tests pass (6 existing + 2 new). Now update progress.md:
+[94m[TodoWrite][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - TTL=0 entries expire immediately; a 10ms sleep..." → "  - TTL=0 entries expire immediately; a 10ms sleep..."
+[94m[TodoWrite][0m
+All acceptance criteria met:
+
+- `main.py` with `create_app(config_path)` factory and module-level `app`
+- `GET /api/data` returns 200 with all required JSON keys
+- `GET /` serves `static/index.html` via catch-all route
+- `StaticFiles` mounted at `/static/css` and `/static/js`
+- `pytest.ini` updated with `asyncio_mode = auto`
+- `tests/test_api.py` with both required async tests
+- `static/index.html` placeholder created
+- 2/2 tests pass
+
+<promise>COMPLETE</promise>

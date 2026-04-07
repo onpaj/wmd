@@ -59,3 +59,15 @@ after each iteration and it's included in prompts for context.
   - `create_app(config_path)` factory pattern lets tests inject a temp config file, avoiding dependency on real config.json at test time
   - `StaticFiles(directory=...)` raises `RuntimeError` if the directory doesn't exist at mount time — directories must exist before app startup
 ---
+
+## 2026-04-07 - US-006
+- Implemented iCloud shared album photo source in sources/icloud.py
+- Added GET /api/photo/{photo_id} proxy endpoint in main.py
+- Files created: sources/icloud.py, tests/test_icloud.py
+- Files changed: main.py (added photo proxy route and get_photo_url import)
+- **Learnings:**
+  - iCloud shared album API: POST `{streamCtag: None}` to webstream, then POST guids to webasseturls; asset items have `url_location` + `url_path` fields that must be combined
+  - `X-Apple-MMe-Host` redirect pattern: if header present, repeat both API calls using that host as base
+  - respx mock with `@respx.mock` decorator works cleanly for async httpx tests alongside `asyncio_mode = auto`
+  - Module-level `_photo_url_map` dict acts as a side-channel for guid→real URL lookup, populated on each `get_photos()` call
+---

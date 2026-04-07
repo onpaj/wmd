@@ -1,0 +1,66 @@
+import pytest
+import respx
+import httpx
+
+from config import AppConfig, ICloudConfig, CalendarConfig, WeatherConfig, HomeAssistantConfig, DisplayConfig
+from sources.icloud import get_photos
+
+
+def make_config(token: str = "testtoken") -> AppConfig:
+    return AppConfig(
+        icloud=ICloudConfig(share_token=token, photo_interval_seconds=30),
+        calendars=[],
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        home_assistant=HomeAssistantConfig(url="http://ha.local", token="", entities=[]),
+        display=DisplayConfig(calendar_days_ahead=2, weather_days=5),
+    )
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_photos_returns_photo_list():
+    token = "testtoken"
+    base = f"https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+
+    respx.post(f"{base}/webstream").mock(
+        return_value=httpx.Response(
+            200,
+            json={"photos": [{"photoGuid": "guid1"}, {"photoGuid": "guid2"}]},
+        )
+    )
+    respx.post(f"{base}/webasseturls").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "items": {
+                    "guid1": {"url_location": "photos.icloud.com", "url_path": "/photo1.jpg"},
+                    "guid2": {"url_location": "photos.icloud.com", "url_path": "/photo2.jpg"},
+                }
+            },
+        )
+    )
+
+    cfg = make_config(token)
+    photos = await get_photos(cfg)
+
+    assert len(photos) == 2
+    assert photos[0].id == "guid1"
+    assert photos[0].url == "/api/photo/guid1"
+    assert photos[1].id == "guid2"
+    assert photos[1].url == "/api/photo/guid2"
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_photos_handles_empty_album():
+    token = "testtoken"
+    base = f"https://p00-sharedstreams.icloud.com/{token}/sharedstreams"
+
+    respx.post(f"{base}/webstream").mock(
+        return_value=httpx.Response(200, json={"photos": []})
+    )
+
+    cfg = make_config(token)
+    photos = await get_photos(cfg)
+
+    assert photos == []

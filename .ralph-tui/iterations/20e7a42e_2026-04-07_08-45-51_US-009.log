@@ -1,0 +1,54 @@
+# Iteration 9 Log
+
+## Metadata
+
+- **Task ID**: US-009
+- **Task Title**: Home Assistant Entity Source
+- **Description**: As a developer, I need the backend to concurrently fetch the state of configured Home Assistant entities so that sensor values appear on the dashboard.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:45:51.926Z
+- **Ended At**: 2026-04-07T06:46:55.484Z
+- **Duration**: 1m 3s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msources/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/weather.py[0m
+Now I have enough context. Let me implement the Home Assistant source. I need to:
+1. Add `label` to `HaEntityConfig` in config.py and update the loader
+2. Create `sources/homeassistant.py`
+3. Create `tests/test_homeassistant.py`
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m edit: "@dataclass
+class HaEntityConfig:
+    entity_id: st..." → "@dataclass
+class HaEntityConfig:
+    entity_id: st..."
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m edit: "        entities=[HaEntityConfig(entity_id=e["enti..." → "        entities=[HaEntityConfig(entity_id=e["enti..."
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/homeassistant.py[0m "import asyncio
+
+import httpx
+
+from config import AppConfig
+from models import HaEntity
+
+
+async def _fetch_entity(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str, label: str) -> HaEn... (1196 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_homeassistant.py[0m "import pytest
+import respx
+import httpx
+
+from config import AppConfig, ICloudConfig, CalendarConfig, WeatherConfig, HomeAssistantConfig, HaEntityConfig, DisplayConfig
+from sources.homeassistant import... (1778 chars)"
+[94m[Bash][0m Run homeassistant tests $ .venv/bin/python -m pytest tests/test_homeassistant.py -v 2>&1
+All 3 tests pass. Let me also verify typecheck passes:
+[94m[Bash][0m Verify imports work $ print('OK')" 2>&1
+Now let me update the progress file:
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "## 2026-04-07 - US-008" → "## 2026-04-07 - US-009
+- Implemented Home Assistan..."
+<promise>COMPLETE</promise>

@@ -6,6 +6,7 @@ after each iteration and it's included in prompts for context.
 ## Codebase Patterns (Study These First)
 
 - **pytest pythonpath**: `pytest.ini` with `pythonpath = .` is required to import root-level modules (cache.py, config.py, etc.) from tests/. Without it, `from cache import Cache` fails with ModuleNotFoundError.
+- **ASGI lifespan in tests**: `httpx.ASGITransport` does NOT trigger ASGI startup events. Store the startup logic in `app.state.populate_cache` and call it directly in integration tests with `await app.state.populate_cache()` under `@respx.mock`.
 
 ---
 
@@ -90,6 +91,16 @@ after each iteration and it's included in prompts for context.
   - `HaEntityConfig` needed a `label` field added (was missing from initial scaffold)
   - `_fetch_entity` helper returns `HaEntity | None`; None results filtered after `asyncio.gather()` — clean pattern for concurrent partial failures
   - `unit_of_measurement` may be absent or None; `or ""` handles both cases
+---
+
+## 2026-04-07 - US-010
+- Wired all four sources into /api/data with background TTL cache
+- Files changed: main.py (full rewrite with Cache, startup event, background refresh loops), tests/test_api_integration.py (new)
+- **Learnings:**
+  - `httpx.ASGITransport` does NOT trigger ASGI startup lifecycle events — store startup logic in `app.state.populate_cache` so integration tests can call it directly under `@respx.mock`
+  - `sources/weather.WeatherDay` is a dataclass; `models.WeatherDay` is a Pydantic model — convert at cache boundary in main.py with `WeatherDayModel(**vars(w))` or explicit field mapping
+  - `asyncio.gather(..., return_exceptions=True)` returns exceptions as values; check with `isinstance(result, BaseException)` before storing into cache; stale value is kept on error by simply not updating
+  - `app.on_event("startup")` is deprecated in newer FastAPI — it still works but emits a `DeprecationWarning`; acceptable for now
 ---
 
 ## 2026-04-07 - US-008

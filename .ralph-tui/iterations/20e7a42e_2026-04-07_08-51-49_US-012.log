@@ -1,0 +1,46 @@
+# Iteration 12 Log
+
+## Metadata
+
+- **Task ID**: US-012
+- **Task Title**: Clock Module
+- **Description**: As a user, I want a large digital clock in the top-right area updating every second so that I can always see the current time without any network call.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:51:49.311Z
+- **Ended At**: 2026-04-07T06:52:44.394Z
+- **Duration**: 55s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/modules/*.ts[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/**/*.ts[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mstatic/css/*.css[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/clock.css[0m
+Now I'll implement the clock module. I need to:
+1. Create `src/modules/clock.ts`
+2. Update `static/css/clock.css`
+3. Update `src/app.ts` to import and call `startClock`
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/modules/clock.ts[0m "export function startClock(container: HTMLElement): void {
+  function tick(): void {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMi... (313 chars)"
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/clock.css[0m edit: "/* Clock module styles */
+" → "/* Clock module styles */
+#clock-area {
+  display:..."
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m edit: "import { fetchData } from './api';
+
+async function..." → "import { fetchData } from './api';
+import { startC..."
+Now let's run the build and typecheck:
+[94m[Bash][0m Build and typecheck TypeScript $ npm run build 2>&1 && npx tsc --noEmit 2>&1
+Both pass. Now append to progress.md:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - CSS grid-template-areas names must not contain..." → "  - CSS grid-template-areas names must not contain..."
+<promise>COMPLETE</promise>

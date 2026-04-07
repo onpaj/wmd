@@ -124,6 +124,16 @@ after each iteration and it's included in prompts for context.
   - CSS grid-template-areas names must not contain hyphens — use `mini-cal` as area name but it works fine in modern browsers
 ---
 
+## 2026-04-07 - US-013
+- Implemented photo crossfade rotation module
+- Files created: src/modules/photo.ts, static/css/photo.css (updated)
+- Files changed: src/app.ts (added renderPhotos import and call)
+- **Learnings:**
+  - Two-img swap pattern: non-active img gets new src; onload fires when image is ready, then classes swap — CSS opacity transition handles the 1s fade automatically
+  - Module-level state (`_interval`, `_photos`, `_index`, `_currentIntervalSeconds`) persists across render() calls; interval is only reset when photoIntervalSeconds changes
+  - `data !== _photos` reference check is insufficient alone — compare length+ids to detect photo array changes reliably
+---
+
 ## 2026-04-07 - US-012
 - Implemented clock module with 1-second interval updating HH:MM display
 - Files created: src/modules/clock.ts

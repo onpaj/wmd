@@ -81,3 +81,12 @@ after each iteration and it's included in prompts for context.
   - icalendar `DTSTART;VALUE=DATE` produces `datetime.date` (not `datetime.datetime`); checking `isinstance(raw_start, date) and not isinstance(raw_start, datetime)` correctly distinguishes all-day from timed events.
   - EXDATE properties can be a single `vDDDLists` or a Python list of them; handle both: `props = exdate_prop if isinstance(exdate_prop, list) else [exdate_prop]`.
 ---
+
+## 2026-04-07 - US-008
+- Implemented weather source with Open-Meteo and AccuWeather providers
+- Files created: sources/weather.py, tests/test_weather.py
+- **Learnings:**
+  - `WeatherProvider` ABC pattern with `OpenMeteoProvider` and `AccuWeatherProvider` subclasses; module-level `get_forecast()` dispatches by `cfg.weather.provider`
+  - `ICON_KEYS` maps WMO weather codes to normalized icon strings; `_AW_ICON_KEYS` maps AccuWeather icon IDs 1-44 to the same set
+  - `respx.mock` decorator works cleanly with `asyncio_mode = auto` for mocking httpx calls in async tests (same pattern as icloud tests)
+---

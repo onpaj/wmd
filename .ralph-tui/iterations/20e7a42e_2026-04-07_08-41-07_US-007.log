@@ -1,0 +1,218 @@
+# Iteration 7 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Calendar ICS Source with Recurring Events
+- **Description**: As a developer, I need the backend to fetch multiple ICS calendar feeds concurrently, parse all event types including recurring ones, and return a single merged sorted list so that the frontend shows ...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:41:07.370Z
+- **Ended At**: 2026-04-07T06:44:38.875Z
+- **Duration**: 3m 31s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Skill][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96m**/*.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/models.py[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/config.py[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96mtests/**/*[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/pytest.ini[0m
+Now I'll follow TDD. First, create the fixture files and failing tests, then implement.
+[94m[ToolSearch][0m query: [93mTodoWrite[0m
+[94m[TodoWrite][0m
+[94m[Bash][0m Create tests/fixtures directory $ mkdir -p /Users/pajgrtondrej/Work/GitHub/DAK/tests/fixtures
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/fixtures/simple.ics[0m "BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:trh-dka@test
+DTSTART:20260407T100000Z
+DTEND:20260407T110000Z
+SUMMARY:Trh Dka
+END:VEVENT
+BEGIN:VEVENT
+UID:celodenni-akce@test
+DTSTA... (296 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/fixtures/recurring.ics[0m "BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+UID:standup@test
+DTSTART:20260407T090000Z
+DTEND:20260407T093000Z
+RRULE:FREQ=DAILY
+SUMMARY:Standup
+END:VEVENT
+END:VCALENDAR
+"
+[94m[TodoWrite][0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/tests/test_calendar.py[0m "from datetime import date, datetime, timezone
+from pathlib import Path
+from unittest import mock
+
+import respx
+import httpx
+import pytest
+
+from config import AppConfig, ICloudConfig, CalendarConfig, W... (3029 chars)"
+[94m[TodoWrite][0m
+[94m[Bash][0m Run calendar tests to verify they fail $ .venv/bin/python -m pytest tests/test_calendar.py -v 2>&1 | head -40
+Tests fail as expected (module not found). Now implement:
+[94m[TodoWrite][0m
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/calendar.py[0m "import asyncio
+import hashlib
+from datetime import date, datetime, timedelta, timezone
+from typing import Any
+
+import httpx
+from dateutil.rrule import rrulestr
+from icalendar import Calendar
+
+from con... (4737 chars)"
+[94m[TodoWrite][0m
+[94m[Bash][0m Run calendar tests $ .venv/bin/python -m pytest tests/test_calendar.py -v 2>&1
+
+[91m[Error: Exit code 1
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-8.2.0, pluggy-1.6.0 -- /Users/pajgrtondrej/Work/GitHub/DAK/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/pajgrtondrej/Work/GitHub/DAK
+configfile: pytest.ini
+plugins: respx-0.21.1, asyncio-0.23.7, anyio-4.13.0
+asyncio: mode=Mode.AUTO
+collecting ... collected 4 items
+
+tests/test_calendar.py::test_parses_simple_events PASSED                 [ 25%]
+tests/test_calendar.py::test_all_day_events_flagged PASSED               [ 50%]
+tests/test_calendar.py::test_recurring_events_expanded FAILED            [ 75%]
+tests/test_calendar.py::test_calendar_color_assigned PASSED              [100%]
+
+=================================== FAILURES ===================================
+________________________ test_recurring_events_expanded ________________________
+
+    @respx.mock
+    async def test_recurring_events_expanded():
+        respx.get(RECURRING_URL).mock(return_value=httpx.Response(200, content=RECURRING_ICS))
+        cfg = make_config(url=RECURRING_URL, calendar_days_ahead=2)
+    
+        with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+            events = await get_events(cfg)
+    
+        standup_events = [e for e in events if e.title == "Standup"]
+        # Window: 2026-04-07 through 2026-04-09 inclusive (calendarDaysAhead+1=3 days)
+>       assert len(standup_events) == 3
+E       assert 0 == 3
+E        +  where 0 = len([])
+
+tests/test_calendar.py:71: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:166: 136 warnings
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:166: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(obj) or inspect.isasyncgenfunction(obj)
+
+.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:429
+.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:429
+.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:429
+.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:429
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:429: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(func)
+
+tests/test_calendar.py::test_parses_simple_events
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:1001: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    return asyncio.get_event_loop_policy()
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:747: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    _restore_event_loop_policy(asyncio.get_event_loop_policy()),
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:973: DeprecationWarning: 'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    asyncio.set_event_loop_policy(new_loop_policy)
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:974: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:762: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    policy = asyncio.get_event_loop_policy()
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:807: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    policy = asyncio.get_event_loop_policy()
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:831: DeprecationWarning: 'asyncio.set_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    asyncio.set_event_loop_policy(previous_policy)
+
+tests/test_calendar.py::test_parses_simple_events
+tests/test_calendar.py::test_all_day_events_flagged
+tests/test_calendar.py::test_recurring_events_expanded
+tests/test_calendar.py::test_calendar_color_assigned
+  /Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/pytest_asyncio/plugin.py:843: DeprecationWarning: 'asyncio.get_event_loop_policy' is deprecated and slated for removal in Python 3.16
+    policy = asyncio.get_event_loop_policy()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_calendar.py::test_recurring_events_expanded - assert 0 == 3
+================== 1 failed, 3 passed, 169 warnings in 0.13s ===================][0m
+The recurring events expansion is returning 0 events. The issue is timezone handling with rrulestr. Let me debug:
+[94m[Bash][0m Debug rrulestr expansion $ .venv/bin/python3 -c " from datetime import datetime, timezone, timedelta from dateutil.rrule import...
+
+[91m[Error: Exit code 1
+Traceback (most recent call last):
+  File "<string>", line 12, in <module>
+    print('occurrences:', list(rule.between(window_start, window_end, inc=True)))
+                               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pajgrtondrej/Work/GitHub/DAK/.venv/lib/python3.14/site-packages/dateutil/rrule.py", line 284, in between
+    if i > before:
+       ^^^^^^^^^^
+TypeError: can't compare offset-naive and offset-aware datetimes][0m
+The issue is clear: dtstart has tz info, making rule generate aware datetimes, but `between` bounds are naive. Fix by stripping tzinfo from dtstart:
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/sources/calendar.py[0m edit: "        if "RRULE" in component:
+            # Exp..." → "        if "RRULE" in component:
+            # Exp..."
+[94m[Bash][0m Run calendar tests $ .venv/bin/python -m pytest tests/test_calendar.py -v 2>&1 | grep -E "(PASSED|FAILED|ERROR|assert|tes...
+All 4 tests pass. Now run typecheck and all tests:
+[94m[Bash][0m Run TypeScript typecheck $ npx tsc --noEmit 2>&1 && echo "TS OK"
+[94m[Bash][0m Run all tests $ .venv/bin/python -m pytest -v 2>&1 | tail -20
+All 14 tests pass, typecheck clean. Update progress.md:
+[94m[TodoWrite][0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - Module-level `_photo_url_map` dict acts as a s..." → "  - Module-level `_photo_url_map` dict acts as a s..."
+[94m[TodoWrite][0m
+All done. 4/4 tests pass, typecheck clean.
+
+**Summary of what was implemented:**
+
+- `tests/fixtures/simple.ics` — two events: timed "Trh Dka" and all-day "Celodení akce"
+- `tests/fixtures/recurring.ics` — daily recurring "Standup" event
+- `tests/test_calendar.py` — 4 respx-mocked tests covering parsing, all-day flagging, recurring expansion, and color assignment
+- `sources/calendar.py` — async `get_events()` that fetches all ICS URLs concurrently, parses VEVENT components, expands RRULEs, applies EXDATEs, filters to the configured window, and sorts by date/all-day/start
+
+**Key gotcha:** `rrulestr` generates aware datetimes when `dtstart` has tzinfo, causing `TypeError` in `between()`. Fixed by stripping tzinfo before passing to rrulestr and re-attaching UTC when building events.
+
+<promise>COMPLETE</promise>

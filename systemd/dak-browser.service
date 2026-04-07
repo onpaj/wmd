@@ -1,0 +1,17 @@
+# NOTE: Replace 'ubuntu' with 'pi' on Raspberry Pi OS
+[Unit]
+Description=DAK Dashboard Kiosk Browser
+After=dak-server.service graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+User=ubuntu
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/ubuntu/.Xauthority
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/bin/chromium-browser --kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-translate --disable-features=Translate http://localhost:3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

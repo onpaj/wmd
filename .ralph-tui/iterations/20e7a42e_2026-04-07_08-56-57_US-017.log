@@ -1,0 +1,32 @@
+# Iteration 17 Log
+
+## Metadata
+
+- **Task ID**: US-017
+- **Task Title**: Complete app.ts — Polling Loop and HA Widget
+- **Description**: As a user, I want all dashboard widgets to update automatically every 60 seconds without a page reload, and see Home Assistant sensor values below the weather, so that all information stays current.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:56:57.236Z
+- **Ended At**: 2026-04-07T06:57:33.772Z
+- **Duration**: 36s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/**/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/types.ts[0m
+The current `app.ts` is missing: an `update()` function, HA rendering, the polling loop (`setInterval`), and `startClock` should be inside `init()`. Let me rewrite it:
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m "import { fetchData } from './api';
+import { DashboardData } from './types';
+import { startClock } from './modules/clock';
+import { render as renderPhotos } from './modules/photo';
+import { render as r... (1375 chars)"
+[94m[Bash][0m $ npx tsc --noEmit 2>&1 && npm run build 2>&1
+Both checks pass. Now let me append to progress.md:
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "## 2026-04-07 - US-016" → "## 2026-04-07 - US-017
+- Completed app.ts: added `..."
+<promise>COMPLETE</promise>

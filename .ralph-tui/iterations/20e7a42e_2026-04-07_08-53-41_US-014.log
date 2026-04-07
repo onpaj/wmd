@@ -1,0 +1,51 @@
+# Iteration 14 Log
+
+## Metadata
+
+- **Task ID**: US-014
+- **Task Title**: Calendar Module
+- **Description**: As a user, I want to see today's and upcoming calendar events in a scrolling list, grouped by date with color-coded borders, so that I can plan my day at a glance.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-07T06:53:41.438Z
+- **Ended At**: 2026-04-07T06:54:38.177Z
+- **Duration**: 56s
+- **Agent**: claude
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Glob][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK[0m pattern: [96msrc/**/*.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/types.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/calendar.css[0m
+Now I have enough context. Let me implement the calendar module.
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/modules/calendar.ts[0m "import { CalendarEvent } from '../types';
+
+const CZECH_DAYS = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
+
+function dateLabel(dateStr: string, todayStr: string): string {
+  if (dateStr === todayStr) r... (2089 chars)"
+[94m[Write][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/static/css/calendar.css[0m "/* Calendar module styles */
+
+#calendar-area {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#calendar-area::-webkit-scrollbar {
+  display: none;
+}
+
+.cal-date-header {
+  font-size: 0.75rem;
+  text-t... (796 chars)"
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/src/app.ts[0m edit: "import { fetchData } from './api';
+import { startC..." → "import { fetchData } from './api';
+import { startC..."
+[94m[Bash][0m Run build and typecheck $ npm run build 2>&1 && npx tsc --noEmit 2>&1
+Both commands pass. Now let me update the progress log:
+[94m[Read][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m
+[94m[Edit][0m [95m/Users/pajgrtondrej/Work/GitHub/DAK/.ralph-tui/progress.md[0m edit: "  - `clamp(3rem, 6vw, 7rem)` in CSS provides respo..." → "  - `clamp(3rem, 6vw, 7rem)` in CSS provides respo..."
+<promise>COMPLETE</promise>

@@ -144,6 +144,17 @@ after each iteration and it's included in prompts for context.
   - `clamp(3rem, 6vw, 7rem)` in CSS provides responsive font sizing without media queries
 ---
 
+## 2026-04-07 - US-015
+- Implemented weather module with 5-day forecast display
+- Files created: src/modules/weather.ts, static/css/weather.css (updated)
+- Files changed: src/app.ts (added renderWeather import and call)
+- `npm run build` exits 0, `npx tsc --noEmit` exits 0
+- **Learnings:**
+  - Czech abbreviated weekday from `date.getUTCDay()` — use UTC methods on YYYY-MM-DD strings since `new Date('2026-04-07')` parses as UTC midnight; `getDay()` would return previous day in UTC+1 or later timezones
+  - `ICON_MAP[key] ?? '🌡'` — nullish coalescing handles both missing keys and empty string cleanly
+  - `Math.round()` for temperature and precip % to produce integer display values
+---
+
 ## 2026-04-07 - US-014
 - Implemented calendar module with date grouping and Czech labels
 - Files created: src/modules/calendar.ts, static/css/calendar.css (updated)

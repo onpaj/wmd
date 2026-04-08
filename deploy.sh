@@ -54,6 +54,7 @@ sudo apt-get install -y \
   nodejs npm \
   chromium \
   labwc wlr-randr \
+  fonts-noto fonts-noto-color-emoji \
   git curl
 
 command -v chromium &>/dev/null || error "chromium not found after install. Run: sudo apt-get install chromium"

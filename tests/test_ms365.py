@@ -23,7 +23,7 @@ def make_config(users=None) -> AppConfig:
     return AppConfig(
         icloud=ICloudConfig(share_token="x", photo_interval_seconds=30),
         calendars=[],
-        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0),
         home_assistant=HomeAssistantConfig(url="http://ha.local", token="tok", entities=[]),
         display=DisplayConfig(calendar_days_ahead=2, weather_days=5),
         ms365=Ms365Config(tenant_id=TENANT_ID, client_id=CLIENT_ID, client_secret=CLIENT_SECRET, users=users),
@@ -133,7 +133,7 @@ async def test_returns_empty_when_ms365_not_configured():
     cfg = AppConfig(
         icloud=ICloudConfig(share_token="x", photo_interval_seconds=30),
         calendars=[],
-        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0),
         home_assistant=HomeAssistantConfig(url="http://ha.local", token="tok", entities=[]),
         display=DisplayConfig(calendar_days_ahead=2, weather_days=5),
     )

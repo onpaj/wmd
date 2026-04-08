@@ -18,7 +18,6 @@ SAMPLE_CONFIG = {
         "provider": "openmeteo",
         "latitude": 50.07,
         "longitude": 14.43,
-        "accuweatherApiKey": "",
     },
     "homeAssistant": {
         "url": "http://homeassistant.local:8123",

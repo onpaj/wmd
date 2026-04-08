@@ -10,7 +10,7 @@ def make_config(token: str = "testtoken") -> AppConfig:
     return AppConfig(
         icloud=ICloudConfig(share_token=token, photo_interval_seconds=30),
         calendars=[],
-        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0),
         home_assistant=HomeAssistantConfig(url="http://ha.local", token="", entities=[]),
         display=DisplayConfig(calendar_days_ahead=2, weather_days=5),
     )

@@ -21,7 +21,7 @@ def make_config(url: str = CAL_URL, color: str = "#FF0000", calendar_days_ahead:
     return AppConfig(
         icloud=ICloudConfig(share_token="x", photo_interval_seconds=30),
         calendars=[CalendarConfig(name="Test Cal", url=url, color=color)],
-        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0),
         home_assistant=HomeAssistantConfig(url="http://ha.local", token="tok", entities=[]),
         display=DisplayConfig(calendar_days_ahead=calendar_days_ahead, weather_days=5),
     )

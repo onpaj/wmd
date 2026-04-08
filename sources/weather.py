@@ -37,48 +37,6 @@ ICON_KEYS: dict[int, str] = {
     99: "storm",
 }
 
-_AW_ICON_KEYS: dict[int, str] = {
-    1: "sunny",
-    2: "sunny",
-    3: "partly-cloudy",
-    4: "partly-cloudy",
-    5: "partly-cloudy",
-    6: "partly-cloudy",
-    7: "cloudy",
-    8: "cloudy",
-    11: "fog",
-    12: "rainy",
-    13: "rainy",
-    14: "rainy",
-    15: "storm",
-    16: "storm",
-    17: "storm",
-    18: "rainy",
-    19: "snow",
-    20: "snow",
-    21: "snow",
-    22: "snow",
-    23: "snow",
-    24: "snow",
-    25: "rainy",
-    26: "rainy",
-    29: "rainy",
-    30: "sunny",
-    31: "sunny",
-    32: "sunny",
-    33: "partly-cloudy",
-    34: "partly-cloudy",
-    35: "partly-cloudy",
-    36: "cloudy",
-    37: "cloudy",
-    38: "cloudy",
-    39: "rainy",
-    40: "rainy",
-    41: "storm",
-    42: "storm",
-    43: "snow",
-    44: "snow",
-}
 
 
 @dataclass
@@ -125,49 +83,6 @@ class OpenMeteoProvider(WeatherProvider):
             )
         return days
 
-
-class AccuWeatherProvider(WeatherProvider):
-    _BASE = "http://dataservice.accuweather.com"
-
-    async def get_forecast(self, cfg: AppConfig) -> list[WeatherDay]:
-        api_key = cfg.weather.accuweather_api_key
-        async with httpx.AsyncClient() as client:
-            # Step 1: geoposition search for location key
-            geo_resp = await client.get(
-                f"{self._BASE}/locations/v1/cities/geoposition/search",
-                params={
-                    "apikey": api_key,
-                    "q": f"{cfg.weather.latitude},{cfg.weather.longitude}",
-                },
-            )
-            geo_resp.raise_for_status()
-            location_key = geo_resp.json()["Key"]
-
-            # Step 2: 5-day daily forecast
-            forecast_resp = await client.get(
-                f"{self._BASE}/forecasts/v1/daily/5day/{location_key}",
-                params={"apikey": api_key, "metric": "true"},
-            )
-            forecast_resp.raise_for_status()
-            forecast_data = forecast_resp.json()
-
-        days: list[WeatherDay] = []
-        for day in forecast_data["DailyForecasts"]:
-            date_str = day["Date"][:10]
-            aw_icon = day["Day"]["Icon"]
-            temp_high = day["Temperature"]["Maximum"]["Value"]
-            temp_low = day["Temperature"]["Minimum"]["Value"]
-            precip = day["Day"].get("PrecipitationProbability", 0)
-            days.append(
-                WeatherDay(
-                    date=date_str,
-                    icon=_AW_ICON_KEYS.get(aw_icon, "cloudy"),
-                    temp_high=temp_high,
-                    temp_low=temp_low,
-                    precip_percent=precip,
-                )
-            )
-        return days
 
 
 _METNO_SYMBOL_ICON: dict[str, str] = {
@@ -261,8 +176,6 @@ class METNorwayProvider(WeatherProvider):
 
 
 async def get_forecast(cfg: AppConfig) -> list[WeatherDay]:
-    if cfg.weather.provider == "accuweather":
-        return await AccuWeatherProvider().get_forecast(cfg)
     if cfg.weather.provider == "metno":
         return await METNorwayProvider().get_forecast(cfg)
     return await OpenMeteoProvider().get_forecast(cfg)

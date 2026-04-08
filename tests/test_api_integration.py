@@ -34,7 +34,7 @@ def config_file(tmp_path):
             {"name": "Family", "url": "http://cal1.test/feed.ics", "color": "#4CAF50"},
             {"name": "Work", "url": "http://cal2.test/feed.ics", "color": "#2196F3"},
         ],
-        "weather": {"provider": "openmeteo", "latitude": 50.07, "longitude": 14.43, "accuweatherApiKey": ""},
+        "weather": {"provider": "openmeteo", "latitude": 50.07, "longitude": 14.43},
         "homeAssistant": {
             "url": "http://homeassistant.local:8123",
             "token": "ha_token",

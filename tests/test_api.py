@@ -9,7 +9,7 @@ def config_file(tmp_path):
     config = {
         "icloud": {"shareToken": "", "photoIntervalSeconds": 30},
         "calendars": [],
-        "weather": {"provider": "openmeteo", "latitude": 50.07, "longitude": 14.43, "accuweatherApiKey": ""},
+        "weather": {"provider": "openmeteo", "latitude": 50.07, "longitude": 14.43},
         "homeAssistant": {"url": "http://homeassistant.local:8123", "token": "", "entities": []},
         "display": {"calendarDaysAhead": 2, "weatherDays": 5},
     }

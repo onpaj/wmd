@@ -14,8 +14,7 @@
   "weather": {
     "provider": "metno",
     "latitude": 50.07,
-    "longitude": 14.43,
-    "accuweatherApiKey": ""
+    "longitude": 14.43
   },
   "homeAssistant": {
     "url": "http://homeassistant.local:8123",

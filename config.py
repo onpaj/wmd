@@ -22,7 +22,6 @@ class WeatherConfig:
     provider: str
     latitude: float
     longitude: float
-    accuweather_api_key: str
 
 
 @dataclass
@@ -106,7 +105,6 @@ def load_config(path: str = "config.json") -> AppConfig:
         provider=weather_data["provider"],
         latitude=weather_data["latitude"],
         longitude=weather_data["longitude"],
-        accuweather_api_key=weather_data.get("accuweatherApiKey", ""),
     )
 
     ha_data = data["homeAssistant"]

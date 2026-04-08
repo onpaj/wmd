@@ -14,7 +14,6 @@ def _make_cfg(provider: str = "openmeteo", weather_days: int = 5) -> AppConfig:
             provider=provider,
             latitude=50.07,
             longitude=14.43,
-            accuweather_api_key="",
         ),
         home_assistant=HomeAssistantConfig(url="http://ha", token="t", entities=[]),
         display=DisplayConfig(calendar_days_ahead=2, weather_days=weather_days),

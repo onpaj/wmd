@@ -23,7 +23,7 @@ def test_load_config_reads_exclude_patterns(tmp_path):
                 "excludePatterns": ["^Busy$", "tentative"],
             }
         ],
-        "weather": {"provider": "metno", "latitude": 50.0, "longitude": 14.0, "accuweatherApiKey": ""},
+        "weather": {"provider": "metno", "latitude": 50.0, "longitude": 14.0},
         "homeAssistant": {"url": "http://ha.local", "token": "tok", "entities": []},
         "display": {"calendarDaysAhead": 2, "weatherDays": 5},
     }

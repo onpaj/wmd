@@ -10,7 +10,7 @@ def make_cfg(entities: list[HaEntityConfig]) -> AppConfig:
     return AppConfig(
         icloud=ICloudConfig(share_token="x", photo_interval_seconds=30),
         calendars=[],
-        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0, accuweather_api_key=""),
+        weather=WeatherConfig(provider="openmeteo", latitude=50.0, longitude=14.0),
         home_assistant=HomeAssistantConfig(
             url="http://homeassistant.local:8123",
             token="test-token",

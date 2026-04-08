@@ -2,6 +2,7 @@ import json
 import pytest
 import httpx
 from httpx import ASGITransport
+from main import _backoff_delay
 
 
 @pytest.fixture
@@ -41,3 +42,28 @@ async def test_static_index_served(app):
     async with httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/")
     assert response.status_code == 200
+
+
+def test_backoff_delay_no_failures_returns_ttl():
+    assert _backoff_delay(0, 60) == 60
+    assert _backoff_delay(0, 1800) == 1800
+
+
+def test_backoff_delay_first_failure_returns_10s():
+    assert _backoff_delay(1, 60) == 10
+    assert _backoff_delay(1, 1800) == 10
+
+
+def test_backoff_delay_doubles_per_failure():
+    assert _backoff_delay(2, 300) == 20
+    assert _backoff_delay(3, 300) == 40
+
+
+def test_backoff_delay_caps_at_ttl():
+    assert _backoff_delay(4, 60) == 60   # min(80, 60) = 60
+    assert _backoff_delay(10, 60) == 60  # still capped
+
+
+def test_backoff_delay_long_ttl_not_capped_early():
+    assert _backoff_delay(4, 1800) == 80   # min(80, 1800) = 80
+    assert _backoff_delay(7, 1800) == 640  # min(10 * 2^6, 1800) = 640

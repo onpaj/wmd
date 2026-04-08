@@ -29,6 +29,14 @@ _TTLS = {
     "outdoor_temp": 60,
 }
 
+_FETCH_TIMEOUT = 60  # hard ceiling per source fetch, in seconds
+
+
+def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
+    if consecutive_failures == 0:
+        return ttl
+    return min(10 * (2 ** (consecutive_failures - 1)), ttl)
+
 
 def create_app(config_path: str = "config.json") -> FastAPI:
     config = load_config(config_path)
@@ -84,15 +92,21 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             cache.set("outdoor_temp", outdoor_temp, _TTLS["outdoor_temp"])
 
     async def _refresh_loop(key: str, fetch_fn, ttl: int) -> None:
+        consecutive_failures = 0
         while True:
-            await asyncio.sleep(ttl)
+            await asyncio.sleep(_backoff_delay(consecutive_failures, ttl))
             try:
-                value = await fetch_fn()
+                value = await asyncio.wait_for(fetch_fn(), timeout=_FETCH_TIMEOUT)
                 if key == "weather":
                     value = _to_weather_models(value)
                 cache.set(key, value, ttl)
+                consecutive_failures = 0
+            except asyncio.TimeoutError:
+                consecutive_failures += 1
+                logger.warning("Fetch timeout for %s (attempt %d)", key, consecutive_failures)
             except Exception:
-                logger.exception("Background refresh failed for %s", key)
+                consecutive_failures += 1
+                logger.exception("Background refresh failed for %s (attempt %d)", key, consecutive_failures)
 
     app.state.populate_cache = _populate_cache
 

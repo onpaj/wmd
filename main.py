@@ -136,7 +136,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         real_url = get_photo_url(photo_id)
         if real_url is None:
             raise HTTPException(status_code=404, detail="Photo not found")
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=20.0) as client:
             upstream = await client.get(real_url)
         content_type = upstream.headers.get("content-type", "image/jpeg")
         return StreamingResponse(iter([upstream.content]), media_type=content_type)

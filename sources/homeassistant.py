@@ -30,7 +30,7 @@ async def get_meals(cfg: AppConfig) -> Meals | None:
 
     ha_url = ha.url.rstrip("/")
     token = ha.token
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         results = await asyncio.gather(
             *[_fetch_entity(client, ha_url, token, eid, "") for eid in ids],
             return_exceptions=True,
@@ -53,7 +53,7 @@ async def get_outdoor_temp(cfg: AppConfig) -> float | None:
         return None
     ha_url = cfg.home_assistant.url.rstrip("/")
     token = cfg.home_assistant.token
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         entity = await _fetch_entity(client, ha_url, token, entity_id, "")
     if entity is None:
         return None
@@ -70,7 +70,7 @@ async def get_entities(cfg: AppConfig) -> list[HaEntity]:
     ha_url = cfg.home_assistant.url.rstrip("/")
     token = cfg.home_assistant.token
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         results = await asyncio.gather(
             *[
                 _fetch_entity(client, ha_url, token, e.entity_id, e.label)

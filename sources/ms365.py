@@ -85,7 +85,7 @@ async def get_ms365_events(cfg: AppConfig) -> list[CalendarEvent]:
     window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     window_end = window_start + timedelta(days=cfg.display.calendar_days_ahead + 1)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             token = await _get_token(client, cfg.ms365.tenant_id, cfg.ms365.client_id, cfg.ms365.client_secret)
         except Exception:

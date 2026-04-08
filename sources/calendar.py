@@ -144,7 +144,7 @@ async def get_mini_cal_events(cfg: AppConfig) -> list[CalendarEvent]:
     window_end = window_start + timedelta(weeks=3)
 
     cal_cfg = CalendarConfig(name="mini", url=cfg.mini_calendar.url, color=cfg.mini_calendar.color)
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=20.0) as client:
         return await _fetch_calendar(client, cal_cfg, window_start, window_end)
 
 
@@ -153,7 +153,7 @@ async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
     window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     window_end = window_start + timedelta(days=cfg.display.calendar_days_ahead + 1)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=20.0) as client:
         results = await asyncio.gather(
             *[_fetch_calendar(client, cal, window_start, window_end) for cal in cfg.calendars]
         )

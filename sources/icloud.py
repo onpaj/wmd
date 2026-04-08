@@ -12,7 +12,7 @@ async def get_photos(cfg: AppConfig) -> list[Photo]:
     token = cfg.icloud.share_token
     base_url = _BASE_URL.format(token=token)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=20.0) as client:
         # Step 1: get stream
         resp = await client.post(
             f"{base_url}/webstream",

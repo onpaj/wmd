@@ -116,21 +116,29 @@ Edit `config.json` (never committed — based on `config.example.json`):
 }
 ```
 
-### Updating config
+## Deploying Updates
 
-After editing `config.json`, restart only the backend — no frontend rebuild needed:
+After every commit, push and run `update.sh` from your dev machine:
 
 ```bash
-sudo systemctl restart wmd-server
+git push && ./update.sh [level]
 ```
 
-### Updating frontend
+Choose the level based on what changed:
 
-After changing frontend source files:
+| Level | When to use |
+|-------|-------------|
+| `frontend` | CSS, TypeScript, layout — no new npm packages |
+| `backend` | Python logic only — no new pip packages |
+| `app` *(default)* | Both frontend and backend changed |
+| `system` | New npm/pip packages, apt packages, or labwc config changed |
+
+The script SSHes into the Pi, pulls the latest code, rebuilds what's needed, and restarts the relevant services. It also copies `config.json` if it exists locally.
+
+**Optional second argument:** target host (default: `rem@192.168.10.66`):
 
 ```bash
-npm run build
-sudo systemctl restart wmd-server
+./update.sh app rem@192.168.10.66
 ```
 
 ---

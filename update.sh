@@ -42,8 +42,13 @@ for i in $(seq 1 12); do
   sleep 5
 done
 
-echo "→ Reloading Chromium..."
+echo "→ Reloading Chromium (clearing cache)..."
 pkill -f chromium || true
+sleep 2
+rm -rf ~/.cache/chromium/Default/Cache \
+       ~/.cache/chromium/Default/"Code Cache" \
+       ~/.cache/chromium/Default/GPUCache 2>/dev/null || true
+sudo systemctl restart wmd-browser
 REMOTE
 
 echo "Update complete."

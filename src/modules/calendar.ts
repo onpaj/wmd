@@ -39,11 +39,18 @@ function formatTime(isoStr: string): string {
 export function render(events: CalendarEvent[], container: HTMLElement): void {
   container.innerHTML = '';
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  // Filter out past events: skip events that ended before now
+  const visibleEvents = events.filter(ev => {
+    if (ev.all_day) return ev.start.slice(0, 10) >= todayStr;
+    return new Date(ev.end) > now;
+  });
 
   // Group events by date
   const groups = new Map<string, CalendarEvent[]>();
-  for (const ev of events) {
+  for (const ev of visibleEvents) {
     const date = ev.start.slice(0, 10);
     if (!groups.has(date)) groups.set(date, []);
     groups.get(date)!.push(ev);

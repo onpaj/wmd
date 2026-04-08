@@ -32,7 +32,7 @@ _TTLS = {
 _FETCH_TIMEOUT: float = 60.0  # hard ceiling per source fetch, in seconds
 
 
-def _backoff_delay(consecutive_failures: int, ttl: int) -> int:
+def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
     if consecutive_failures == 0:
         return ttl
     return min(10 * (2 ** (consecutive_failures - 1)), ttl)

@@ -22,7 +22,7 @@ REPO_URL="${1:-}"          # Optional: git repo URL
 CONFIG_B64="${2:-}"        # Optional: base64-encoded config.json content
 INSTALL_DIR="/home/$(whoami)/wmd"
 WMD_USER="$(whoami)"
-BRANCH="main"
+BRANCH="master"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -53,10 +53,18 @@ sudo apt-get install -y \
   python3 python3-pip python3-venv \
   nodejs npm \
   chromium \
+  labwc wlr-randr \
   git curl
 
 command -v chromium &>/dev/null || error "chromium not found after install. Run: sudo apt-get install chromium"
 info "Chromium binary: $(command -v chromium)"
+
+# Remove gnome-keyring — it shows a "change password for new keyring" dialog on
+# first boot, which blocks the kiosk. It is not needed on a headless kiosk Pi.
+if dpkg -l gnome-keyring &>/dev/null 2>&1; then
+  info "Removing gnome-keyring (causes keyring dialog on first boot)..."
+  sudo apt-get remove -y gnome-keyring
+fi
 
 # ── 2. Clone or update repository ────────────────────────────────────────────
 if [[ -d "$INSTALL_DIR/.git" ]]; then
@@ -107,8 +115,25 @@ npm --prefix "$INSTALL_DIR" ci --silent
 npm --prefix "$INSTALL_DIR" run build
 
 # ── 6. LightDM auto-login ────────────────────────────────────────────────────
-info "Skipping LightDM configuration (already configured on Raspberry Pi OS)..."
+# Removing gnome-keyring (step 1) also removes rpd-wayland-core, which provides
+# the rpd-labwc session and pi-greeter-labwc greeter that lightdm.conf references
+# by default. Patch lightdm.conf to use the plain labwc session and
+# lightdm-gtk-greeter so LightDM doesn't crash on next boot.
+info "Configuring LightDM auto-login with labwc session..."
+sudo sed -i "s/greeter-session=pi-greeter-labwc/greeter-session=lightdm-gtk-greeter/" /etc/lightdm/lightdm.conf
+sudo sed -i "s/user-session=rpd-labwc/user-session=labwc/" /etc/lightdm/lightdm.conf
+sudo sed -i "s/autologin-session=rpd-labwc/autologin-session=labwc/" /etc/lightdm/lightdm.conf
 sudo systemctl set-default graphical.target
+
+# Configure lightdm-gtk-greeter to not show language/session indicators and use
+# a black background — it flashes briefly during autologin, and without this the
+# "English" language indicator is visible for a moment on screen.
+sudo tee /etc/lightdm/lightdm-gtk-greeter.conf > /dev/null << 'EOF'
+[greeter]
+indicators=~session;~power
+background=#000000
+user-background=false
+EOF
 
 # ── 7. labwc autostart: screen rotation + kiosk browser ──────────────────────
 info "Configuring labwc autostart (rotation + kiosk)..."
@@ -154,6 +179,17 @@ if os.path.exists(rc_xml):
         if monitor is None:
             monitor = ET.SubElement(idle, 'monitor')
         monitor.set('timeout', '0')
+        # Cursor: hide after 1s of inactivity (wall display — no mouse needed)
+        core = root.find('core')
+        if core is None:
+            core = ET.SubElement(root, 'core')
+        cursor = core.find('cursor')
+        if cursor is None:
+            cursor = ET.SubElement(core, 'cursor')
+        hide_timeout = cursor.find('hideTimeout')
+        if hide_timeout is None:
+            hide_timeout = ET.SubElement(cursor, 'hideTimeout')
+        hide_timeout.text = '1000'
         tree.write(rc_xml, xml_declaration=True, encoding='UTF-8')
     except ET.ParseError:
         with open(rc_xml, 'w') as f:
@@ -164,6 +200,15 @@ else:
 print("idle monitor timeout set to 0")
 PYEOF
 info "Screen blanking disabled."
+
+# Mask squeekboard XDG autostart — it shows an on-screen keyboard with an
+# "English" language indicator that overlays the kiosk display.
+info "Masking squeekboard XDG autostart..."
+mkdir -p "/home/${WMD_USER}/.config/autostart"
+cat > "/home/${WMD_USER}/.config/autostart/squeekboard.desktop" << 'EOF'
+[Desktop Entry]
+Hidden=true
+EOF
 
 # ── 8. Systemd service files ──────────────────────────────────────────────────
 info "Installing systemd service files..."

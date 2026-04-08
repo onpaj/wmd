@@ -29,7 +29,7 @@ This pipes `deploy.sh` over SSH and runs it as your Pi user. The script is idemp
 
 ## What deploy.sh Does
 
-1. **System packages** — installs `nodejs npm chromium git curl python3-venv` via apt
+1. **System packages** — installs `nodejs npm chromium labwc wlr-randr git curl python3-venv` via apt; removes `gnome-keyring` (causes a "change password for new keyring" dialog on first boot)
 2. **Code** — clones `https://github.com/onpaj/wmd.git` (or pulls if already present)
 3. **Config** — writes `config.json` from the provided file (or keeps existing)
 4. **Python env** — creates `.venv` and installs `requirements.txt`
@@ -110,6 +110,23 @@ ssh rem@192.168.10.66 'sudo systemctl restart wmd-server'
 **Node.js / npm not found after install**
 - `ssh rem@192.168.10.66 'apt-cache policy nodejs'` — should show v20
 - Re-run deploy.sh
+
+**"Change password for new keyring" dialog on boot**
+- `gnome-keyring` is installed by default on RPi OS and triggers this dialog on first login
+- deploy.sh removes it automatically; to fix manually: `sudo apt-get remove gnome-keyring`
+- **Side effect:** removing `gnome-keyring` also removes `rpd-wayland-core`, which provides the `rpd-labwc` session and `pi-greeter-labwc` greeter — causing LightDM to crash on next boot
+- deploy.sh patches `/etc/lightdm/lightdm.conf` to use `labwc` + `lightdm-gtk-greeter` instead; to fix manually: `sudo sed -i "s/pi-greeter-labwc/lightdm-gtk-greeter/; s/rpd-labwc/labwc/" /etc/lightdm/lightdm.conf`
+- **Do not run `sudo apt autoremove` after removing gnome-keyring** — it will also pull out `labwc` and its Wayland libs. If that happens: `sudo apt-get install labwc wlr-randr`
+
+**"English" overlay / on-screen keyboard visible**
+- `squeekboard` (RPi OS on-screen keyboard) autostarts and shows a language indicator
+- deploy.sh masks it via `~/.config/autostart/squeekboard.desktop` with `Hidden=true`
+- To fix manually: `mkdir -p ~/.config/autostart && echo -e '[Desktop Entry]\nHidden=true' > ~/.config/autostart/squeekboard.desktop`
+
+**Mouse cursor visible on screen**
+- `unclutter-xfixes` does not work on Wayland; cursor is hidden two ways instead:
+  1. CSS `cursor: none` on `html, body` in `static/css/base.css` — hides it inside the dashboard
+  2. labwc `<core><cursor><hideTimeout>1000</hideTimeout></cursor></core>` in `rc.xml` — hides it 1s after last movement (covers boot period before Chromium starts)
 
 **Photos not loading** — verify `icloud.shareToken` in `config.json`
 

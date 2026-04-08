@@ -98,8 +98,6 @@ def create_app(config_path: str = "config.json") -> FastAPI:
 
     @app.on_event("startup")
     async def startup() -> None:
-        await _populate_cache()
-        asyncio.create_task(_refresh_loop("photos", lambda: get_photos(config), _TTLS["photos"]))
         async def _fetch_all_events():
             ics, ms365 = await asyncio.gather(get_events(config), get_ms365_events(config), return_exceptions=True)
             combined = []
@@ -110,6 +108,8 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             combined.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
             return combined
 
+        asyncio.create_task(_populate_cache())
+        asyncio.create_task(_refresh_loop("photos", lambda: get_photos(config), _TTLS["photos"]))
         asyncio.create_task(_refresh_loop("events", _fetch_all_events, _TTLS["events"]))
         asyncio.create_task(_refresh_loop("mini_cal_events", lambda: get_mini_cal_events(config), _TTLS["mini_cal_events"]))
         asyncio.create_task(_refresh_loop("weather", lambda: get_forecast(config), _TTLS["weather"]))

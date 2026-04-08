@@ -80,16 +80,22 @@ async def get_garden_temps(cfg: AppConfig) -> GardenTemps:
         except (ValueError, TypeError):
             return None
 
-    glasshouse, coop, brooder = await asyncio.gather(
+    glasshouse, coop, brooder, glasshouse_hum, coop_hum, brooder_hum = await asyncio.gather(
         _fetch_temp(ha.glasshouse_entity_id),
         _fetch_temp(ha.coop_entity_id),
         _fetch_temp(ha.brooder_entity_id),
+        _fetch_temp(ha.glasshouse_humidity_entity_id),
+        _fetch_temp(ha.coop_humidity_entity_id),
+        _fetch_temp(ha.brooder_humidity_entity_id),
         return_exceptions=True,
     )
     return GardenTemps(
         glasshouse=glasshouse if isinstance(glasshouse, float) else None,
         coop=coop if isinstance(coop, float) else None,
         brooder=brooder if isinstance(brooder, float) else None,
+        glasshouse_humidity=glasshouse_hum if isinstance(glasshouse_hum, float) else None,
+        coop_humidity=coop_hum if isinstance(coop_hum, float) else None,
+        brooder_humidity=brooder_hum if isinstance(brooder_hum, float) else None,
     )
 
 

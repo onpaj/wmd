@@ -19,7 +19,13 @@
   "homeAssistant": {
     "url": "http://homeassistant.local:8123",
     "token": "",
-    "entities": []
+    "entities": [],
+    "glasshouseEntityId": "",
+    "glasshouseHumidityEntityId": "",
+    "coopEntityId": "",
+    "coopHumidityEntityId": "",
+    "brooderEntityId": "",
+    "brooderHumidityEntityId": ""
   },
   "display": {
     "calendarDaysAhead": 2,

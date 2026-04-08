@@ -13,10 +13,10 @@ const ICON_MAP: Record<string, string> = {
   fog: '🌫',
 };
 
-const GARDEN_SENSORS: { key: keyof GardenTemps; icon: string; label: string }[] = [
-  { key: 'glasshouse', icon: '🪴', label: 'Skleník' },
-  { key: 'coop',       icon: '🐔', label: 'Kurník' },
-  { key: 'brooder',    icon: '🐣', label: 'Líheň' },
+const GARDEN_SENSORS: { key: keyof GardenTemps; humKey: keyof GardenTemps; icon: string; label: string; decimals: number }[] = [
+  { key: 'glasshouse', humKey: 'glasshouse_humidity', icon: '🪴', label: 'Skleník', decimals: 0 },
+  { key: 'coop',       humKey: 'coop_humidity',       icon: '🐔', label: 'Kurník',  decimals: 0 },
+  { key: 'brooder',    humKey: 'brooder_humidity',    icon: '🐣', label: 'Líheň',   decimals: 1 },
 ];
 
 function getIcon(iconKey: string): string {
@@ -38,10 +38,16 @@ export function renderTemperatures(gardenTemps: GardenTemps | null, container: H
 
     const value = document.createElement('div');
     value.className = 'garden-temp-value';
-    value.textContent = val !== null ? `${val.toFixed(sensor.key === 'brooder' ? 1 : 0)}°` : '—';
+    value.textContent = val !== null ? `${val.toFixed(sensor.decimals)}°` : '—';
+
+    const hum = gardenTemps[sensor.humKey] as number | null;
+    const humidity = document.createElement('div');
+    humidity.className = 'garden-temp-humidity';
+    humidity.textContent = hum !== null ? `${Math.round(hum)}%` : '—';
 
     item.appendChild(icon);
     item.appendChild(value);
+    item.appendChild(humidity);
     container.appendChild(item);
   }
 }

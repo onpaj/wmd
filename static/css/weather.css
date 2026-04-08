@@ -24,6 +24,11 @@
   font-weight: bold;
 }
 
+.garden-temp-humidity {
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  opacity: 0.6;
+}
+
 /* Weather forecast */
 #weather-area {
   display: flex;

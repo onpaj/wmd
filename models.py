@@ -45,6 +45,9 @@ class GardenTemps(BaseModel):
     glasshouse: float | None = None
     coop: float | None = None
     brooder: float | None = None
+    glasshouse_humidity: float | None = None
+    coop_humidity: float | None = None
+    brooder_humidity: float | None = None
 
 
 class DashboardData(BaseModel):

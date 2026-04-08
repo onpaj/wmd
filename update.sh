@@ -27,7 +27,7 @@ esac
 
 echo "Updating WMD on ${HOST} (level: ${LEVEL})..."
 
-$SSH "$HOST" LEVEL="$LEVEL" 'bash -s' << 'REMOTE'
+{ echo "LEVEL=$LEVEL"; cat << 'REMOTE'; } | $SSH "$HOST" bash
 set -euo pipefail
 cd ~/wmd
 
@@ -38,13 +38,13 @@ git reset --hard origin/master
 # ── SYSTEM: install all dependencies ────────────────────────────────────────
 if [ "$LEVEL" = "system" ]; then
   echo "→ Installing system packages..."
-  sudo apt-get install -y -qq fonts-noto fonts-noto-color-emoji 2>/dev/null || true
+  sudo apt-get install -y fonts-noto fonts-noto-color-emoji fonts-roboto || true
 
   echo "→ Installing npm dependencies..."
-  npm ci --silent
+  npm ci
 
   echo "→ Updating Python dependencies..."
-  .venv/bin/pip install --quiet -r requirements.txt
+  .venv/bin/pip install -r requirements.txt
 
   echo "→ Applying labwc config (autostart + rc.xml)..."
   LABWC_DIR="$HOME/.config/labwc"

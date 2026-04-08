@@ -9,7 +9,8 @@ html, body {
   height: 100%;
   background: #000;
   color: #fff;
-  font-family: 'Noto Sans', sans-serif;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
   overflow: hidden;
   cursor: none;
 }

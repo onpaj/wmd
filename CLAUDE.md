@@ -169,14 +169,22 @@ All top-level keys except `icloud`, `calendars`, `weather`, `homeAssistant`, and
 
 ## Deploy Routine
 
-After every commit, always run these three steps in order:
+After every commit, always run:
 
 ```bash
-git push
-./update.sh
+git push && ./update.sh [level]
 ```
 
-This pushes to GitHub and then pulls + rebuilds + restarts the service on the Raspberry Pi. Never skip the device update after a commit.
+Choose the level based on what changed:
+
+| Level | Use when |
+|-------|----------|
+| `frontend` *(e.g. CSS, TS, layout)* | Frontend-only change, no new npm packages |
+| `backend` *(e.g. Python logic)* | Backend-only change, no new pip packages |
+| `app` *(default)* | Both frontend and backend changed |
+| `system` | New npm/pip packages, apt packages, or labwc config changed |
+
+Never skip the device update after a commit.
 
 ## Key Design Constraints
 

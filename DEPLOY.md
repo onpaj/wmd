@@ -83,12 +83,30 @@ ssh rem@192.168.10.66 'sudo reboot'
 
 ## Updating
 
-```bash
-# Pull latest code + rebuild (keeps existing config.json)
-./deploy-to-pi.sh rem@192.168.10.66 https://github.com/onpaj/wmd.git
+Use `update.sh` after every commit. The first argument selects the update level:
 
-# Then restart backend
-ssh rem@192.168.10.66 'sudo systemctl restart wmd-server'
+| Level | What it does |
+|-------|-------------|
+| `frontend` | git pull → rebuild JS → clear Chromium cache & restart |
+| `backend` | git pull → restart `wmd-server` |
+| `app` *(default)* | git pull → rebuild JS + restart `wmd-server` + clear Chromium cache |
+| `system` | `app` + `npm ci`, `pip install`, apt packages, labwc config |
+
+```bash
+# Most common — code change, no dependency changes
+git push && ./update.sh
+
+# Frontend-only change (e.g. CSS, layout tweak)
+git push && ./update.sh frontend
+
+# Backend-only change (e.g. Python logic, no new deps)
+git push && ./update.sh backend
+
+# Added new npm/pip packages or changed system config
+git push && ./update.sh system
+
+# Custom host (second arg)
+./update.sh app rem@192.168.10.66
 ```
 
 ---

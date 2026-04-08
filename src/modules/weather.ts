@@ -38,7 +38,7 @@ export function renderTemperatures(gardenTemps: GardenTemps | null, container: H
 
     const value = document.createElement('div');
     value.className = 'garden-temp-value';
-    value.textContent = val !== null ? `${Math.round(val)}°` : '—';
+    value.textContent = val !== null ? `${val.toFixed(sensor.key === 'brooder' ? 1 : 0)}°` : '—';
 
     item.appendChild(icon);
     item.appendChild(value);

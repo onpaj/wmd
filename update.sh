@@ -36,6 +36,9 @@ else
   echo "✗ wmd-server not responding — check: journalctl -u wmd-server -f"
   exit 1
 fi
+
+echo "→ Reloading Chromium..."
+pkill -f chromium || true
 REMOTE
 
 echo "Update complete."

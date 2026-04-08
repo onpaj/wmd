@@ -28,14 +28,19 @@ echo "→ Updating Python dependencies..."
 echo "→ Restarting wmd-server..."
 sudo systemctl restart wmd-server
 
-echo "→ Verifying..."
-sleep 3
-if curl -sf http://localhost:3000/api/data > /dev/null; then
-  echo "✓ wmd-server is responding"
-else
-  echo "✗ wmd-server not responding — check: journalctl -u wmd-server -f"
-  exit 1
-fi
+echo "→ Verifying (waiting up to 60s for startup)..."
+for i in $(seq 1 12); do
+  if curl -sf --max-time 5 http://localhost:3000/api/data > /dev/null 2>&1; then
+    echo "✓ wmd-server is responding"
+    break
+  fi
+  if [ "$i" -eq 12 ]; then
+    echo "✗ wmd-server not responding after 60s — check: journalctl -u wmd-server -f"
+    exit 1
+  fi
+  echo "  waiting... (${i}/12)"
+  sleep 5
+done
 
 echo "→ Reloading Chromium..."
 pkill -f chromium || true

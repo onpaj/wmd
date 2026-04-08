@@ -167,6 +167,17 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
 
 All top-level keys except `icloud`, `calendars`, `weather`, `homeAssistant`, and `display` are optional.
 
+## Deploy Routine
+
+After every commit, always run these three steps in order:
+
+```bash
+git push
+./update.sh
+```
+
+This pushes to GitHub and then pulls + rebuilds + restarts the service on the Raspberry Pi. Never skip the device update after a commit.
+
 ## Key Design Constraints
 
 - **No external access** — fully local network, no cloud dependency beyond data source APIs

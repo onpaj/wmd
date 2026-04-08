@@ -10,6 +10,10 @@ The project is **specification-driven** — see `tasks/prd-dak-dashboard.md` (us
 
 For deployment instructions, see `DEPLOY.md`.
 
+## Wall Mount Display (WMD) Access
+
+SSH into the Raspberry Pi with: `ssh -i ~/.ssh/id_ed25519_rpi rem@192.168.10.66`
+
 ## Tech Stack
 
 - **Backend:** Python 3.11+, FastAPI, uvicorn, httpx, icalendar, python-dateutil

@@ -1,231 +1,116 @@
 # DAK Dashboard — Deployment Guide
 
-Target platform: Raspberry Pi or any Ubuntu Server 22.04/24.04 machine running in kiosk mode.
+Target platform: Raspberry Pi running Raspberry Pi OS (Debian Trixie, Wayland/labwc).
 
 ---
 
-## 1. System Requirements
+## Prerequisites
 
-- Ubuntu Server 22.04/24.04 (or Raspberry Pi OS 64-bit)
-- Python 3.11+
-- Node.js 18+
-- Chromium browser
-- A display connected to the machine (HDMI)
+- Raspberry Pi OS (Debian Trixie or later) installed
+- LightDM configured for auto-login (default on RPi OS — user `rem` or your username)
+- HDMI display connected
+- SSH access
 
 ---
 
-## 2. Install System Dependencies
+## One-Command Deploy
+
+From your local machine (where this repo lives):
 
 ```bash
-sudo apt update && sudo apt install -y \
-  python3 python3-pip python3-venv \
-  nodejs npm \
-  chromium-browser \
-  xorg lightdm openbox \
-  unclutter
+./deploy-to-pi.sh rem@192.168.10.66 https://github.com/onpaj/wmd.git config.json
 ```
 
-> On Raspberry Pi OS, `chromium-browser` may be named `chromium`. Check with `which chromium` after install.
+Replace `rem@192.168.10.66` with your Pi's user and IP. Omit `config.json` to keep the existing config on the Pi.
+
+This pipes `deploy.sh` over SSH and runs it as your Pi user. The script is idempotent — safe to re-run.
 
 ---
 
-## 3. Create a Dedicated User (optional but recommended)
+## What deploy.sh Does
 
-The systemd services default to user `ubuntu`. On Raspberry Pi OS, the default user is `pi`. Adjust if needed — the username appears in `systemd/*.service` files.
-
----
-
-## 4. Clone the Repository
-
-```bash
-git clone <repo-url> /home/ubuntu/dak
-cd /home/ubuntu/dak
-```
-
-Replace `ubuntu` with your actual username if different.
+1. **System packages** — installs `nodejs npm chromium git curl python3-venv` via apt
+2. **Code** — clones `https://github.com/onpaj/wmd.git` (or pulls if already present)
+3. **Config** — writes `config.json` from the provided file (or keeps existing)
+4. **Python env** — creates `.venv` and installs `requirements.txt`
+5. **Frontend** — runs `npm ci && npm run build`
+6. **labwc autostart** — writes `~/.config/labwc/autostart`:
+   - Rotates display 90° clockwise via `wlr-randr` (detects output name dynamically)
+   - Launches Chromium in Wayland kiosk mode, auto-restarts on crash
+7. **Screen blanking** — disables idle monitor timeout in `~/.config/labwc/rc.xml`
+8. **dak-server** — installs and enables systemd service (backend on port 3000)
 
 ---
 
-## 5. Configure
+## Configuration
 
 ```bash
 cp config.example.json config.json
 nano config.json
 ```
 
-Fill in your values. Minimum required fields:
+Minimum required fields:
 
 | Field | Description |
 |-------|-------------|
-| `icloud.shareToken` | Token from an iCloud shared album URL (the part after `?token=`) |
-| `calendars[].url` | ICS feed URL (iCloud, Google, etc.) |
-| `weather.latitude` / `longitude` | Your location coordinates |
+| `icloud.shareToken` | Token from iCloud shared album URL (after `?token=`) |
+| `calendars[].url` | ICS feed URL |
+| `weather.latitude` / `longitude` | Location coordinates |
 | `homeAssistant.url` / `token` | HA instance URL and long-lived access token |
-
-Optional integrations: `ms365` (Microsoft 365 calendars), `miniCalendar` (separate ICS feed).
 
 See `CLAUDE.md` for the full config schema.
 
 ---
 
-## 6. Build the Frontend
+## Verify
 
 ```bash
-npm install
-npm run build
+# Backend running?
+ssh rem@192.168.10.66 'systemctl status dak-server'
+ssh rem@192.168.10.66 'curl -s http://localhost:3000/api/data | python3 -m json.tool | head -20'
+
+# Follow logs
+ssh rem@192.168.10.66 'journalctl -u dak-server -f'
 ```
 
-This produces `static/js/app.js`. Re-run after any frontend change.
-
----
-
-## 7. Set Up the Python Environment
+Reboot the Pi to start the full kiosk session (labwc autostart launches Chromium):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+ssh rem@192.168.10.66 'sudo reboot'
 ```
-
----
-
-## 8. Configure Auto-Login (LightDM)
-
-The kiosk browser needs a graphical session. Configure LightDM for automatic login:
-
-```bash
-sudo nano /etc/lightdm/lightdm.conf
-```
-
-Add or update the `[Seat:*]` section:
-
-```ini
-[Seat:*]
-autologin-user=ubuntu
-autologin-user-timeout=0
-user-session=openbox
-```
-
-Replace `ubuntu` with your actual username.
-
-Set graphical mode as default:
-
-```bash
-sudo systemctl set-default graphical.target
-```
-
----
-
-## 9. Install Systemd Services
-
-If your username is not `ubuntu`, edit the service files first:
-
-```bash
-# Replace 'ubuntu' with your actual username in both service files
-sed -i 's/ubuntu/YOUR_USERNAME/g' systemd/dak-server.service
-sed -i 's/ubuntu/YOUR_USERNAME/g' systemd/dak-browser.service
-```
-
-Install and enable:
-
-```bash
-sudo cp systemd/dak-server.service /etc/systemd/system/
-sudo cp systemd/dak-browser.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable dak-server dak-browser
-sudo systemctl start dak-server dak-browser
-```
-
----
-
-## 10. Verify
-
-```bash
-# Check backend is running
-systemctl status dak-server
-curl http://localhost:3000/api/data
-
-# Check browser is running
-systemctl status dak-browser
-
-# Follow live logs
-journalctl -u dak-server -f
-journalctl -u dak-browser -f
-```
-
-The dashboard should appear on the connected display after a few seconds.
 
 ---
 
 ## Updating
 
-After pulling changes:
-
 ```bash
-cd /home/ubuntu/dak
-git pull
+# Pull latest code + rebuild (keeps existing config.json)
+./deploy-to-pi.sh rem@192.168.10.66 https://github.com/onpaj/wmd.git
 
-# If Python dependencies changed
-source .venv/bin/activate && pip install -r requirements.txt
-
-# If frontend changed
-npm run build
-
-# Restart backend (browser restarts automatically via systemd dependency)
-sudo systemctl restart dak-server
+# Then restart backend
+ssh rem@192.168.10.66 'sudo systemctl restart dak-server'
 ```
 
 ---
 
 ## Troubleshooting
 
-**Browser shows blank screen or can't connect**
-- Check `dak-server` is running: `systemctl status dak-server`
-- Check port 3000 is listening: `ss -tlnp | grep 3000`
-- The browser service waits 3 seconds after `dak-server` starts; give it a moment
+**Backend not responding**
+- `ssh rem@192.168.10.66 'systemctl status dak-server'`
+- `ssh rem@192.168.10.66 'journalctl -u dak-server -b'`
 
-**Photos not loading**
-- Verify `icloud.shareToken` in `config.json`
-- Check logs: `journalctl -u dak-server -f`
+**Chromium not starting / wrong orientation**
+- Check labwc autostart: `ssh rem@192.168.10.66 'cat ~/.config/labwc/autostart'`
+- Run wlr-randr manually from SSH (requires `WAYLAND_DISPLAY`): reboot and check via the display
 
-**Calendar events missing**
-- Confirm the ICS URL is publicly accessible from the Pi
-- Test: `curl "<your-ics-url>"` — should return iCalendar data
+**Screen going blank**
+- Check rc.xml: `ssh rem@192.168.10.66 'cat ~/.config/labwc/rc.xml'`
+- Confirm `<monitor timeout="0"/>` is present under `<idle>`
 
-**Weather not showing**
-- Default provider is MET.no (free, no key). Check coordinates are correct.
-- Test: `curl "http://localhost:3000/api/data" | python3 -m json.tool | grep weather`
+**Node.js / npm not found after install**
+- `ssh rem@192.168.10.66 'apt-cache policy nodejs'` — should show v20
+- Re-run deploy.sh
 
-**Chromium command not found**
-- On Raspberry Pi OS: check `which chromium` and update `ExecStart` in `dak-browser.service` accordingly
+**Photos not loading** — verify `icloud.shareToken` in `config.json`
 
-**Display is blank after reboot**
-- Confirm LightDM auto-login is configured (step 8)
-- Confirm graphical target is default: `systemctl get-default` → should return `graphical.target`
-- Check: `journalctl -u lightdm -b`
-
----
-
-## Kiosk Hardening (optional)
-
-To prevent the screensaver or display power-off from blanking the TV:
-
-```bash
-# Add to /home/ubuntu/.config/openbox/autostart
-xset s off
-xset -dpms
-xset s noblank
-unclutter -idle 0 &
-```
-
-Create the file if it doesn't exist:
-
-```bash
-mkdir -p ~/.config/openbox
-cat >> ~/.config/openbox/autostart << 'EOF'
-xset s off
-xset -dpms
-xset s noblank
-unclutter -idle 0 &
-EOF
-```
+**Calendar events missing** — confirm ICS URL is reachable from the Pi: `curl "<ics-url>"`

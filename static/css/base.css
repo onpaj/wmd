@@ -21,10 +21,11 @@ html, body {
   height: calc(100vh - 40px);
   margin: 20px;
   grid-template-columns: 3fr 2fr;
-  grid-template-rows: 55vh 2fr 1fr 1fr;
+  grid-template-rows: 55vh 2fr auto 1fr 1fr;
   grid-template-areas:
     "photo    photo"
     "calendar clock"
+    "calendar garden-temps"
     "calendar weather"
     "calendar mini-cal";
 }
@@ -41,6 +42,10 @@ html, body {
 
 #clock-area {
   grid-area: clock;
+}
+
+#garden-temps-area {
+  grid-area: garden-temps;
 }
 
 #weather-area {

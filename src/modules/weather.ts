@@ -23,43 +23,36 @@ function getIcon(iconKey: string): string {
   return ICON_MAP[iconKey] ?? '🌡';
 }
 
-export function render(days: WeatherDay[], gardenTemps: GardenTemps | null, container: HTMLElement): void {
+export function renderTemperatures(gardenTemps: GardenTemps | null, container: HTMLElement): void {
   container.innerHTML = '';
+  if (!gardenTemps) return;
 
-  // Garden temps row
-  if (gardenTemps) {
-    const row = document.createElement('div');
-    row.className = 'garden-temps';
+  for (const sensor of GARDEN_SENSORS) {
+    const val = gardenTemps[sensor.key];
+    const item = document.createElement('div');
+    item.className = 'garden-temp-item';
 
-    for (const sensor of GARDEN_SENSORS) {
-      const val = gardenTemps[sensor.key];
-      const item = document.createElement('div');
-      item.className = 'garden-temp-item';
+    const icon = document.createElement('div');
+    icon.className = 'garden-temp-icon';
+    icon.textContent = sensor.icon;
 
-      const icon = document.createElement('div');
-      icon.className = 'garden-temp-icon';
-      icon.textContent = sensor.icon;
+    const label = document.createElement('div');
+    label.className = 'garden-temp-label';
+    label.textContent = sensor.label;
 
-      const label = document.createElement('div');
-      label.className = 'garden-temp-label';
-      label.textContent = sensor.label;
+    const value = document.createElement('div');
+    value.className = 'garden-temp-value';
+    value.textContent = val !== null ? `${Math.round(val)}°` : '—';
 
-      const value = document.createElement('div');
-      value.className = 'garden-temp-value';
-      value.textContent = val !== null ? `${Math.round(val)}°` : '—';
-
-      item.appendChild(icon);
-      item.appendChild(label);
-      item.appendChild(value);
-      row.appendChild(item);
-    }
-
-    container.appendChild(row);
+    item.appendChild(icon);
+    item.appendChild(label);
+    item.appendChild(value);
+    container.appendChild(item);
   }
+}
 
-  // Weather forecast row
-  const forecast = document.createElement('div');
-  forecast.className = 'weather-forecast';
+export function render(days: WeatherDay[], container: HTMLElement): void {
+  container.innerHTML = '';
 
   for (const day of days) {
     const date = new Date(day.date);
@@ -93,8 +86,6 @@ export function render(days: WeatherDay[], gardenTemps: GardenTemps | null, cont
     col.appendChild(high);
     col.appendChild(low);
     col.appendChild(precip);
-    forecast.appendChild(col);
+    container.appendChild(col);
   }
-
-  container.appendChild(forecast);
 }

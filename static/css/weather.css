@@ -4,7 +4,7 @@
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  padding: 1rem 0.5rem;
+  padding: 1.8rem 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -12,21 +12,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.3rem;
 }
 
 .garden-temp-icon {
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
-}
-
-.garden-temp-label {
-  font-size: clamp(0.65rem, 1.2vw, 0.9rem);
-  opacity: 0.6;
-  text-transform: uppercase;
+  font-size: clamp(2rem, 3.5vw, 3rem);
 }
 
 .garden-temp-value {
-  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
   font-weight: bold;
 }
 

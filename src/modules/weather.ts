@@ -36,16 +36,11 @@ export function renderTemperatures(gardenTemps: GardenTemps | null, container: H
     icon.className = 'garden-temp-icon';
     icon.textContent = sensor.icon;
 
-    const label = document.createElement('div');
-    label.className = 'garden-temp-label';
-    label.textContent = sensor.label;
-
     const value = document.createElement('div');
     value.className = 'garden-temp-value';
     value.textContent = val !== null ? `${Math.round(val)}°` : '—';
 
     item.appendChild(icon);
-    item.appendChild(label);
     item.appendChild(value);
     container.appendChild(item);
   }

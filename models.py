@@ -41,6 +41,12 @@ class Meals(BaseModel):
     lunch_tomorrow: str
 
 
+class GardenTemps(BaseModel):
+    glasshouse: float | None = None
+    coop: float | None = None
+    brooder: float | None = None
+
+
 class DashboardData(BaseModel):
     photos: list[Photo]
     events: list[CalendarEvent]
@@ -49,5 +55,6 @@ class DashboardData(BaseModel):
     ha_entities: list[HaEntity]
     meals: Meals | None
     outdoor_temp: float | None
+    garden_temps: GardenTemps | None = None
     photo_interval_seconds: int
     server_time: datetime

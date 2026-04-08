@@ -1,4 +1,4 @@
-import { WeatherDay } from '../types';
+import { WeatherDay, GardenTemps } from '../types';
 
 const CZECH_DAYS = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
 
@@ -13,12 +13,53 @@ const ICON_MAP: Record<string, string> = {
   fog: '🌫',
 };
 
+const GARDEN_SENSORS: { key: keyof GardenTemps; icon: string; label: string }[] = [
+  { key: 'glasshouse', icon: '🪴', label: 'Skleník' },
+  { key: 'coop',       icon: '🐔', label: 'Kurník' },
+  { key: 'brooder',    icon: '🐣', label: 'Líheň' },
+];
+
 function getIcon(iconKey: string): string {
   return ICON_MAP[iconKey] ?? '🌡';
 }
 
-export function render(days: WeatherDay[], container: HTMLElement): void {
+export function render(days: WeatherDay[], gardenTemps: GardenTemps | null, container: HTMLElement): void {
   container.innerHTML = '';
+
+  // Garden temps row
+  if (gardenTemps) {
+    const row = document.createElement('div');
+    row.className = 'garden-temps';
+
+    for (const sensor of GARDEN_SENSORS) {
+      const val = gardenTemps[sensor.key];
+      const item = document.createElement('div');
+      item.className = 'garden-temp-item';
+
+      const icon = document.createElement('div');
+      icon.className = 'garden-temp-icon';
+      icon.textContent = sensor.icon;
+
+      const label = document.createElement('div');
+      label.className = 'garden-temp-label';
+      label.textContent = sensor.label;
+
+      const value = document.createElement('div');
+      value.className = 'garden-temp-value';
+      value.textContent = val !== null ? `${Math.round(val)}°` : '—';
+
+      item.appendChild(icon);
+      item.appendChild(label);
+      item.appendChild(value);
+      row.appendChild(item);
+    }
+
+    container.appendChild(row);
+  }
+
+  // Weather forecast row
+  const forecast = document.createElement('div');
+  forecast.className = 'weather-forecast';
 
   for (const day of days) {
     const date = new Date(day.date);
@@ -52,6 +93,8 @@ export function render(days: WeatherDay[], container: HTMLElement): void {
     col.appendChild(high);
     col.appendChild(low);
     col.appendChild(precip);
-    container.appendChild(col);
+    forecast.appendChild(col);
   }
+
+  container.appendChild(forecast);
 }

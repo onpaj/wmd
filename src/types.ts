@@ -36,6 +36,12 @@ export interface Meals {
   lunch_tomorrow: string;
 }
 
+export interface GardenTemps {
+  glasshouse: number | null;
+  coop: number | null;
+  brooder: number | null;
+}
+
 export interface DashboardData {
   photos: Photo[];
   events: CalendarEvent[];
@@ -44,6 +50,7 @@ export interface DashboardData {
   ha_entities: HaEntity[];
   meals: Meals | null;
   outdoor_temp: number | null;
+  garden_temps: GardenTemps | null;
   photo_interval_seconds: number;
   server_time: string;
 }

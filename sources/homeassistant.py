@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 from config import AppConfig
-from models import HaEntity, Meals
+from models import GardenTemps, HaEntity, Meals
 
 
 async def _fetch_entity(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str, label: str) -> HaEntity | None:
@@ -61,6 +61,36 @@ async def get_outdoor_temp(cfg: AppConfig) -> float | None:
         return float(entity.state)
     except (ValueError, TypeError):
         return None
+
+
+async def get_garden_temps(cfg: AppConfig) -> GardenTemps:
+    ha = cfg.home_assistant
+    ha_url = ha.url.rstrip("/")
+    token = ha.token
+
+    async def _fetch_temp(entity_id: str) -> float | None:
+        if not entity_id:
+            return None
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            entity = await _fetch_entity(client, ha_url, token, entity_id, "")
+        if entity is None:
+            return None
+        try:
+            return float(entity.state)
+        except (ValueError, TypeError):
+            return None
+
+    glasshouse, coop, brooder = await asyncio.gather(
+        _fetch_temp(ha.glasshouse_entity_id),
+        _fetch_temp(ha.coop_entity_id),
+        _fetch_temp(ha.brooder_entity_id),
+        return_exceptions=True,
+    )
+    return GardenTemps(
+        glasshouse=glasshouse if isinstance(glasshouse, float) else None,
+        coop=coop if isinstance(coop, float) else None,
+        brooder=brooder if isinstance(brooder, float) else None,
+    )
 
 
 async def get_entities(cfg: AppConfig) -> list[HaEntity]:

@@ -40,6 +40,9 @@ class HomeAssistantConfig:
     soup_today_entity_id: str = ""
     soup_tomorrow_entity_id: str = ""
     outside_temperature_entity_id: str = ""
+    glasshouse_entity_id: str = ""
+    coop_entity_id: str = ""
+    brooder_entity_id: str = ""
 
 
 @dataclass
@@ -117,6 +120,9 @@ def load_config(path: str = "config.json") -> AppConfig:
         soup_today_entity_id=ha_data.get("soupTodayEntityId", ""),
         soup_tomorrow_entity_id=ha_data.get("soupTomorrowEntityId", ""),
         outside_temperature_entity_id=ha_data.get("outsideTemperature", ""),
+        glasshouse_entity_id=ha_data.get("glasshouseEntityId", ""),
+        coop_entity_id=ha_data.get("coopEntityId", ""),
+        brooder_entity_id=ha_data.get("brooderEntityId", ""),
     )
 
     display_data = data["display"]

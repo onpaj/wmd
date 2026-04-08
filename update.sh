@@ -27,6 +27,11 @@ esac
 
 echo "Updating WMD on ${HOST} (level: ${LEVEL})..."
 
+if [ -f config.json ]; then
+  echo "→ Copying config.json..."
+  scp -i ~/.ssh/id_ed25519_rpi config.json "${HOST}:~/wmd/config.json"
+fi
+
 { echo "LEVEL=$LEVEL"; cat << 'REMOTE'; } | $SSH "$HOST" bash
 set -euo pipefail
 cd ~/wmd
@@ -52,7 +57,7 @@ if [ "$LEVEL" = "system" ]; then
 
   cat > "${LABWC_DIR}/autostart" << 'AUTOSTART'
 # Screen rotation: detect first connected output, rotate 90° clockwise
-wlr-randr --output "$(wlr-randr | head -1 | awk '{print $1}')" --transform 90
+wlr-randr --output "$(wlr-randr | head -1 | awk '{print $1}')" --mode 1920x1080 --transform 90
 
 # Wait for wmd-server backend to be ready
 sleep 5

@@ -44,11 +44,11 @@ done
 
 echo "→ Reloading Chromium (clearing cache)..."
 pkill -f chromium || true
-sleep 2
+sleep 1
 rm -rf ~/.cache/chromium/Default/Cache \
        ~/.cache/chromium/Default/"Code Cache" \
        ~/.cache/chromium/Default/GPUCache 2>/dev/null || true
-sudo systemctl restart wmd-browser
+echo "✓ Chromium will restart automatically via labwc autostart"
 REMOTE
 
 echo "Update complete."

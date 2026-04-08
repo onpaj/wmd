@@ -97,10 +97,9 @@ systemd: wmd-browser
 
 ### Weather Forecast
 - 5-day forecast (configurable via `weatherDays`)
-- Three provider options:
+- Two provider options:
   - **MET.no** (free, no API key, recommended)
   - **OpenMeteo** (free, no API key)
-  - **AccuWeather** (requires API key)
 - Emoji weather icons mapped from WMO weather codes
 - High/low temperature, precipitation probability
 - Czech weekday labels
@@ -133,8 +132,7 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
   "weather": {
     "provider": "metno",
     "latitude": 50.07,
-    "longitude": 14.43,
-    "accuweatherApiKey": ""
+    "longitude": 14.43
   },
   "homeAssistant": {
     "url": "http://homeassistant.local:8123",

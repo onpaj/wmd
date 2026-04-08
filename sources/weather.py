@@ -38,7 +38,6 @@ ICON_KEYS: dict[int, str] = {
 }
 
 
-
 @dataclass
 class WeatherDay:
     date: str
@@ -82,7 +81,6 @@ class OpenMeteoProvider(WeatherProvider):
                 )
             )
         return days
-
 
 
 _METNO_SYMBOL_ICON: dict[str, str] = {

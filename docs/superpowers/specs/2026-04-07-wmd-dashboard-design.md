@@ -1,4 +1,4 @@
-# DAK Dashboard — Design Spec
+# WMD Dashboard — Design Spec
 
 **Date:** 2026-04-07
 **Status:** Approved
@@ -15,11 +15,11 @@ A self-hosted DAKBoard-style wall dashboard running on a Raspberry Pi connected 
 
 ```
 RPi Boot
- ├── systemd: dak-server.service  → Python/FastAPI (uvicorn) on :3000
+ ├── systemd: wmd-server.service  → Python/FastAPI (uvicorn) on :3000
  │     ├── GET /api/data          → aggregated JSON response
  │     ├── GET /api/photo/:id     → proxied iCloud photo (avoids CORS)
  │     └── serves static files   → compiled frontend
- └── systemd: dak-browser.service → Chromium --kiosk http://localhost:3000
+ └── systemd: wmd-browser.service → Chromium --kiosk http://localhost:3000
 ```
 
 ### Backend (Python/FastAPI)
@@ -51,7 +51,7 @@ Compiled to `static/js/app.js` via esbuild (single bundle, no framework).
 ## Directory Layout
 
 ```
-/home/pi/dak/
+/home/pi/wmd/
 ├── main.py
 ├── config.json
 ├── requirements.txt
@@ -84,8 +84,8 @@ Compiled to `static/js/app.js` via esbuild (single bundle, no framework).
 │       ├── weather.css
 │       └── mini-calendar.css
 └── systemd/
-    ├── dak-server.service
-    └── dak-browser.service
+    ├── wmd-server.service
+    └── wmd-browser.service
 ```
 
 ---
@@ -197,26 +197,26 @@ If a source fails, the last successful value is returned (stale-while-revalidate
 npm run build   # esbuild src/app.ts --bundle --outfile=static/js/app.js
 ```
 
-### systemd: dak-server.service
+### systemd: wmd-server.service
 ```ini
 [Unit]
-Description=DAK Dashboard Server
+Description=WMD Dashboard Server
 After=network.target
 
 [Service]
-WorkingDirectory=/home/pi/dak
-ExecStart=/home/pi/dak/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000
+WorkingDirectory=/home/pi/wmd
+ExecStart=/home/pi/wmd/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### systemd: dak-browser.service
+### systemd: wmd-browser.service
 ```ini
 [Unit]
-Description=DAK Dashboard Browser
-After=dak-server.service graphical.target
+Description=WMD Dashboard Browser
+After=wmd-server.service graphical.target
 Wants=graphical.target
 
 [Service]

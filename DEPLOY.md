@@ -1,4 +1,4 @@
-# DAK Dashboard — Deployment Guide
+# WMD Dashboard — Deployment Guide
 
 Target platform: Raspberry Pi running Raspberry Pi OS (Debian Trixie, Wayland/labwc).
 
@@ -38,7 +38,7 @@ This pipes `deploy.sh` over SSH and runs it as your Pi user. The script is idemp
    - Rotates display 90° clockwise via `wlr-randr` (detects output name dynamically)
    - Launches Chromium in Wayland kiosk mode, auto-restarts on crash
 7. **Screen blanking** — disables idle monitor timeout in `~/.config/labwc/rc.xml`
-8. **dak-server** — installs and enables systemd service (backend on port 3000)
+8. **wmd-server** — installs and enables systemd service (backend on port 3000)
 
 ---
 
@@ -66,11 +66,11 @@ See `CLAUDE.md` for the full config schema.
 
 ```bash
 # Backend running?
-ssh rem@192.168.10.66 'systemctl status dak-server'
+ssh rem@192.168.10.66 'systemctl status wmd-server'
 ssh rem@192.168.10.66 'curl -s http://localhost:3000/api/data | python3 -m json.tool | head -20'
 
 # Follow logs
-ssh rem@192.168.10.66 'journalctl -u dak-server -f'
+ssh rem@192.168.10.66 'journalctl -u wmd-server -f'
 ```
 
 Reboot the Pi to start the full kiosk session (labwc autostart launches Chromium):
@@ -88,7 +88,7 @@ ssh rem@192.168.10.66 'sudo reboot'
 ./deploy-to-pi.sh rem@192.168.10.66 https://github.com/onpaj/wmd.git
 
 # Then restart backend
-ssh rem@192.168.10.66 'sudo systemctl restart dak-server'
+ssh rem@192.168.10.66 'sudo systemctl restart wmd-server'
 ```
 
 ---
@@ -96,8 +96,8 @@ ssh rem@192.168.10.66 'sudo systemctl restart dak-server'
 ## Troubleshooting
 
 **Backend not responding**
-- `ssh rem@192.168.10.66 'systemctl status dak-server'`
-- `ssh rem@192.168.10.66 'journalctl -u dak-server -b'`
+- `ssh rem@192.168.10.66 'systemctl status wmd-server'`
+- `ssh rem@192.168.10.66 'journalctl -u wmd-server -b'`
 
 **Chromium not starting / wrong orientation**
 - Check labwc autostart: `ssh rem@192.168.10.66 'cat ~/.config/labwc/autostart'`

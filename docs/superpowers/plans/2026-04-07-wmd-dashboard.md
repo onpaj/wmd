@@ -1,4 +1,4 @@
-# DAK Dashboard Implementation Plan
+# WMD Dashboard Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -13,7 +13,7 @@
 ## File Map
 
 ```
-/home/pi/dak/
+/home/pi/wmd/
 ├── main.py                        # FastAPI app, routes, startup
 ├── models.py                      # Pydantic response models
 ├── config.py                      # Config loading + validation
@@ -53,8 +53,8 @@
 │       ├── weather.css
 │       └── mini-calendar.css
 ├── systemd/
-│   ├── dak-server.service
-│   └── dak-browser.service
+│   ├── wmd-server.service
+│   └── wmd-browser.service
 ├── config.json                    # User config (not committed)
 ├── config.example.json            # Template committed to repo
 ├── requirements.txt
@@ -673,8 +673,8 @@ if __name__ == "__main__":
 ```html
 <!DOCTYPE html>
 <html lang="cs">
-<head><meta charset="UTF-8"><title>DAK</title></head>
-<body><p>DAK loading...</p></body>
+<head><meta charset="UTF-8"><title>WMD</title></head>
+<body><p>WMD loading...</p></body>
 </html>
 ```
 
@@ -1774,7 +1774,7 @@ export async function fetchData(): Promise<DashboardData> {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DAK</title>
+  <title>WMD</title>
   <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/photo.css" />
   <link rel="stylesheet" href="/static/css/calendar.css" />
@@ -1843,7 +1843,7 @@ import { fetchData } from "./api";
 
 async function init() {
   const data = await fetchData();
-  console.log("DAK data loaded:", data.server_time);
+  console.log("WMD data loaded:", data.server_time);
 }
 
 init();
@@ -1914,7 +1914,7 @@ import { startClock } from "./modules/clock";
 async function init() {
   startClock(document.getElementById("clock-area")!);
   const data = await fetchData();
-  console.log("DAK data loaded:", data.server_time);
+  console.log("WMD data loaded:", data.server_time);
 }
 
 init();
@@ -2547,21 +2547,21 @@ git commit -m "feat: mini calendar module with event dots and complete polling l
 ## Task 17: systemd Services
 
 **Files:**
-- Create: `systemd/dak-server.service`
-- Create: `systemd/dak-browser.service`
+- Create: `systemd/wmd-server.service`
+- Create: `systemd/wmd-browser.service`
 
-- [ ] **Step 1: Create `systemd/dak-server.service`**
+- [ ] **Step 1: Create `systemd/wmd-server.service`**
 
 ```ini
 [Unit]
-Description=DAK Dashboard Server
+Description=WMD Dashboard Server
 After=network.target
 Wants=network.target
 
 [Service]
 User=ubuntu
-WorkingDirectory=/home/ubuntu/dak
-ExecStart=/home/ubuntu/dak/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000
+WorkingDirectory=/home/ubuntu/wmd
+ExecStart=/home/ubuntu/wmd/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -2573,12 +2573,12 @@ WantedBy=multi-user.target
 
 > Note: Replace `ubuntu` with `pi` if using Raspberry Pi OS instead of Ubuntu Server.
 
-- [ ] **Step 2: Create `systemd/dak-browser.service`**
+- [ ] **Step 2: Create `systemd/wmd-browser.service`**
 
 ```ini
 [Unit]
-Description=DAK Dashboard Browser (Chromium Kiosk)
-After=dak-server.service graphical-session.target
+Description=WMD Dashboard Browser (Chromium Kiosk)
+After=wmd-server.service graphical-session.target
 Wants=graphical-session.target
 
 [Service]
@@ -2606,7 +2606,7 @@ WantedBy=graphical-session.target
 - [ ] **Step 3: Commit**
 
 ```bash
-git add systemd/dak-server.service systemd/dak-browser.service
+git add systemd/wmd-server.service systemd/wmd-browser.service
 git commit -m "feat: systemd service files for server and kiosk browser"
 ```
 
@@ -2620,7 +2620,7 @@ git commit -m "feat: systemd service files for server and kiosk browser"
 - [ ] **Step 1: Create `README.md`**
 
 ```markdown
-# DAK Dashboard
+# WMD Dashboard
 
 Self-hosted wall dashboard for Raspberry Pi (Ubuntu Server). Displays iCloud photos, merged calendars, weather, and Home Assistant data in a Chromium kiosk on a wall-mounted TV.
 
@@ -2644,8 +2644,8 @@ sudo apt install -y chromium-browser unclutter xorg lightdm
 ### 2. Clone and configure
 
 ```bash
-git clone <repo-url> /home/ubuntu/dak
-cd /home/ubuntu/dak
+git clone <repo-url> /home/ubuntu/wmd
+cd /home/ubuntu/wmd
 cp config.example.json config.json
 nano config.json   # fill in your tokens and URLs
 ```
@@ -2670,8 +2670,8 @@ npm run build
 ```bash
 sudo cp systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable dak-server dak-browser
-sudo systemctl start dak-server dak-browser
+sudo systemctl enable wmd-server wmd-browser
+sudo systemctl start wmd-server wmd-browser
 ```
 
 ### 6. Enable auto-login (for kiosk display)
@@ -2687,7 +2687,7 @@ sudo nano /etc/lightdm/lightdm.conf
 Edit `config.json` and restart the server — no rebuild needed for config changes:
 
 ```bash
-sudo systemctl restart dak-server
+sudo systemctl restart wmd-server
 ```
 
 ## Updating frontend
@@ -2696,7 +2696,7 @@ After editing TypeScript source files:
 
 ```bash
 npm run build
-sudo systemctl restart dak-server
+sudo systemctl restart wmd-server
 ```
 
 ## Calendar ICS URLs
@@ -2712,8 +2712,8 @@ From a shared album URL like `https://www.icloud.com/photos/0AbCdEfG123...`, the
 ## Logs
 
 ```bash
-journalctl -u dak-server -f
-journalctl -u dak-browser -f
+journalctl -u wmd-server -f
+journalctl -u wmd-browser -f
 ```
 ```
 

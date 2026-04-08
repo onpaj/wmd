@@ -1,8 +1,8 @@
-# PRD: DAK Dashboard — Implementation Stories
+# PRD: WMD Dashboard — Implementation Stories
 
 ## Introduction
 
-DAK is a self-hosted wall dashboard for a Raspberry Pi (Ubuntu Server) connected to a wall-mounted TV. It displays a rotating iCloud shared album photo, merged multi-calendar events, a live clock, a 5-day weather forecast, a mini month calendar, and optional Home Assistant sensor values. The backend is Python/FastAPI; the frontend is TypeScript compiled with esbuild running in Chromium kiosk mode. All data is cached server-side; the frontend never blocks on external API calls and never flickers.
+WMD is a self-hosted wall dashboard for a Raspberry Pi (Ubuntu Server) connected to a wall-mounted TV. It displays a rotating iCloud shared album photo, merged multi-calendar events, a live clock, a 5-day weather forecast, a mini month calendar, and optional Home Assistant sensor values. The backend is Python/FastAPI; the frontend is TypeScript compiled with esbuild running in Chromium kiosk mode. All data is cached server-side; the frontend never blocks on external API calls and never flickers.
 
 This PRD translates the implementation plan into 18 executable user stories, each scoped to one focused session.
 
@@ -362,12 +362,12 @@ This PRD translates the implementation plan into 18 executable user stories, eac
 > **Use superpowers:executing-plans skill for implementing this user story.**
 
 **Acceptance Criteria:**
-- [ ] `systemd/dak-server.service` exists with:
+- [ ] `systemd/wmd-server.service` exists with:
   - `[Unit]`: `After=network.target`, `Wants=network.target`
-  - `[Service]`: `User=ubuntu`, `WorkingDirectory=/home/ubuntu/dak`, `ExecStart=/home/ubuntu/dak/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000`, `Restart=always`, `RestartSec=5`, `StandardOutput=journal`, `StandardError=journal`
+  - `[Service]`: `User=ubuntu`, `WorkingDirectory=/home/ubuntu/wmd`, `ExecStart=/home/ubuntu/wmd/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000`, `Restart=always`, `RestartSec=5`, `StandardOutput=journal`, `StandardError=journal`
   - `[Install]`: `WantedBy=multi-user.target`
-- [ ] `systemd/dak-browser.service` exists with:
-  - `[Unit]`: `After=dak-server.service graphical-session.target`, `Wants=graphical-session.target`
+- [ ] `systemd/wmd-browser.service` exists with:
+  - `[Unit]`: `After=wmd-server.service graphical-session.target`, `Wants=graphical-session.target`
   - `[Service]`: `User=ubuntu`, `Environment=DISPLAY=:0`, `Environment=XAUTHORITY=/home/ubuntu/.Xauthority`, `ExecStartPre=/bin/sleep 3`, `ExecStart=/usr/bin/chromium-browser` with flags: `--kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-translate --disable-features=Translate --autoplay-policy=no-user-gesture-required http://localhost:3000`, `Restart=always`, `RestartSec=5`
   - `[Install]`: `WantedBy=graphical-session.target`
 - [ ] A comment in both files notes that `ubuntu` should be replaced with `pi` on Raspberry Pi OS
@@ -387,13 +387,13 @@ This PRD translates the implementation plan into 18 executable user stories, eac
   - **Setup / Step 2 — Clone and configure**: `git clone`, `cp config.example.json config.json`, edit config
   - **Setup / Step 3 — Install Python dependencies**: create `.venv`, activate, `pip install -r requirements.txt`
   - **Setup / Step 4 — Build frontend**: `npm install && npm run build`
-  - **Setup / Step 5 — Install systemd services**: `sudo cp systemd/*.service /etc/systemd/system/`, `systemctl daemon-reload`, `systemctl enable dak-server dak-browser`, `systemctl start dak-server dak-browser`
+  - **Setup / Step 5 — Install systemd services**: `sudo cp systemd/*.service /etc/systemd/system/`, `systemctl daemon-reload`, `systemctl enable wmd-server wmd-browser`, `systemctl start wmd-server wmd-browser`
   - **Setup / Step 6 — Enable auto-login**: set `graphical.target` as default, configure `lightdm.conf` for `autologin-user=ubuntu`
-  - **Updating config**: `nano config.json` → `sudo systemctl restart dak-server` (no rebuild needed)
-  - **Updating frontend**: `npm run build` → `sudo systemctl restart dak-server`
+  - **Updating config**: `nano config.json` → `sudo systemctl restart wmd-server` (no rebuild needed)
+  - **Updating frontend**: `npm run build` → `sudo systemctl restart wmd-server`
   - **Calendar ICS URLs**: how to get ICS links from iCloud, Google, and MS365/Outlook
   - **iCloud Share Token**: how to extract token from share URL
-  - **Logs**: `journalctl -u dak-server -f` and `journalctl -u dak-browser -f`
+  - **Logs**: `journalctl -u wmd-server -f` and `journalctl -u wmd-browser -f`
 - [ ] Committed to git with message `docs: deployment guide and setup README`
 
 ---
@@ -460,7 +460,7 @@ This PRD translates the implementation plan into 18 executable user stories, eac
 - All four data sources display real data (photos rotating, calendar events listed, weather forecast shown, HA value displayed)
 - No visible flicker or blank frames during photo rotation or 60s data refresh
 - System runs continuously for 7+ days without manual intervention
-- Adding a new ICS calendar requires only editing `config.json` and restarting `dak-server`
+- Adding a new ICS calendar requires only editing `config.json` and restarting `wmd-server`
 
 ---
 

@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DAK is a self-hosted wall dashboard for Raspberry Pi (replacing DAKBoard), displaying photos, calendars, weather, and Home Assistant sensors on a wall-mounted TV via Chromium kiosk mode.
+WMD is a self-hosted wall dashboard for Raspberry Pi (replacing DAKBoard), displaying photos, calendars, weather, and Home Assistant sensors on a wall-mounted TV via Chromium kiosk mode.
 
-The project is **specification-driven** — see `tasks/prd-dak-dashboard.md` (user stories) and `docs/superpowers/specs/2026-04-07-dak-dashboard-design.md` (technical design) before implementing anything.
+The project is **specification-driven** — see `tasks/prd-wmd-dashboard.md` (user stories) and `docs/superpowers/specs/2026-04-07-wmd-dashboard-design.md` (technical design) before implementing anything.
 
 For deployment instructions, see `DEPLOY.md`.
 
@@ -39,19 +39,19 @@ pytest
 
 # Deploy systemd services
 sudo cp systemd/*.service /etc/systemd/system/
-sudo systemctl enable dak-server dak-browser
-sudo systemctl start dak-server dak-browser
+sudo systemctl enable wmd-server wmd-browser
+sudo systemctl start wmd-server wmd-browser
 ```
 
 ## Architecture
 
 ```
-systemd: dak-server (FastAPI :3000)
+systemd: wmd-server (FastAPI :3000)
   ├── GET /api/data          → aggregated JSON (always <50ms, served from cache)
   ├── GET /api/photo/:id     → proxied iCloud photo (avoids CORS)
   └── static/                → compiled frontend bundle
 
-systemd: dak-browser
+systemd: wmd-browser
   └── Chromium --kiosk http://localhost:3000
 ```
 

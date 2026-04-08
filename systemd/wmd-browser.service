@@ -1,7 +1,7 @@
 # NOTE: Replace 'ubuntu' with 'pi' on Raspberry Pi OS
 [Unit]
-Description=DAK Dashboard Kiosk Browser
-After=dak-server.service graphical-session.target
+Description=WMD Dashboard Kiosk Browser
+After=wmd-server.service graphical-session.target
 Wants=graphical-session.target
 
 [Service]

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# DAK Dashboard — One-shot deployment script
+# WMD Dashboard — One-shot deployment script
 # Usage:
 #   On the target machine:
 #     bash deploy.sh [REPO_URL] [CONFIG_BASE64]
 #
 #   Via SSH from local machine (recommended):
 #     ssh user@host 'bash -s' -- \
-#       "https://github.com/you/dak.git" \
+#       "https://github.com/you/wmd.git" \
 #       "$(base64 < config.json)" \
 #       < deploy.sh
 #
@@ -20,8 +20,8 @@ set -euo pipefail
 # ── Configuration ────────────────────────────────────────────────────────────
 REPO_URL="${1:-}"          # Optional: git repo URL
 CONFIG_B64="${2:-}"        # Optional: base64-encoded config.json content
-INSTALL_DIR="/home/$(whoami)/dak"
-DAK_USER="$(whoami)"
+INSTALL_DIR="/home/$(whoami)/wmd"
+WMD_USER="$(whoami)"
 BRANCH="main"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-info()  { echo -e "${GREEN}[DAK]${NC} $*"; }
+info()  { echo -e "${GREEN}[WMD]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
@@ -43,7 +43,7 @@ require_root() {
 # ── Pre-flight ────────────────────────────────────────────────────────────────
 require_root
 
-info "DAK Dashboard deployment — user: ${DAK_USER}, target: ${INSTALL_DIR}"
+info "WMD Dashboard deployment — user: ${WMD_USER}, target: ${INSTALL_DIR}"
 info "Date: $(date)"
 
 # ── 1. System packages ────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ elif [[ -n "$REPO_URL" ]]; then
   info "Cloning repository from ${REPO_URL}..."
   git clone --branch "$BRANCH" "$REPO_URL" "$INSTALL_DIR"
 else
-  error "No code found at ${INSTALL_DIR} and no REPO_URL provided.\n       Pass the git URL as first argument:  bash deploy.sh https://github.com/you/dak.git\n       Or copy the project to ${INSTALL_DIR} first, then re-run."
+  error "No code found at ${INSTALL_DIR} and no REPO_URL provided.\n       Pass the git URL as first argument:  bash deploy.sh https://github.com/you/wmd.git\n       Or copy the project to ${INSTALL_DIR} first, then re-run."
 fi
 
 cd "$INSTALL_DIR"
@@ -112,14 +112,14 @@ sudo systemctl set-default graphical.target
 
 # ── 7. labwc autostart: screen rotation + kiosk browser ──────────────────────
 info "Configuring labwc autostart (rotation + kiosk)..."
-LABWC_DIR="/home/${DAK_USER}/.config/labwc"
+LABWC_DIR="/home/${WMD_USER}/.config/labwc"
 mkdir -p "$LABWC_DIR"
 
 cat > "${LABWC_DIR}/autostart" << 'EOF'
 # Screen rotation: detect first connected output, rotate 90° clockwise
 wlr-randr --output "$(wlr-randr | head -1 | awk '{print $1}')" --transform 90
 
-# Wait for dak-server backend to be ready
+# Wait for wmd-server backend to be ready
 sleep 5
 
 # Chromium kiosk — auto-restarts on crash
@@ -168,15 +168,15 @@ info "Screen blanking disabled."
 # ── 8. Systemd service files ──────────────────────────────────────────────────
 info "Installing systemd service files..."
 
-# Generate dak-server.service
-sudo tee /etc/systemd/system/dak-server.service > /dev/null << EOF
+# Generate wmd-server.service
+sudo tee /etc/systemd/system/wmd-server.service > /dev/null << EOF
 [Unit]
-Description=DAK Dashboard Server
+Description=WMD Dashboard Server
 After=network.target
 Wants=network.target
 
 [Service]
-User=${DAK_USER}
+User=${WMD_USER}
 WorkingDirectory=${INSTALL_DIR}
 ExecStart=${INSTALL_DIR}/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000
 Restart=always
@@ -189,25 +189,25 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable dak-server
+sudo systemctl enable wmd-server
 info "Services enabled."
 
 # ── 9. Start services ─────────────────────────────────────────────────────────
-info "Starting dak-server..."
-sudo systemctl restart dak-server
+info "Starting wmd-server..."
+sudo systemctl restart wmd-server
 
 # Give server a moment to start before verifying
 sleep 3
 if curl -sf http://localhost:3000/api/data > /dev/null; then
-  info "dak-server is responding at http://localhost:3000/api/data"
+  info "wmd-server is responding at http://localhost:3000/api/data"
 else
-  warn "dak-server did not respond yet. Check: journalctl -u dak-server -f"
+  warn "wmd-server did not respond yet. Check: journalctl -u wmd-server -f"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║          DAK Dashboard deployment complete           ║${NC}"
+echo -e "${GREEN}║          WMD Dashboard deployment complete           ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo "  Install dir : ${INSTALL_DIR}"
@@ -216,10 +216,10 @@ echo "  Backend     : http://localhost:3000"
 echo ""
 echo "  Next steps:"
 echo "    1. Edit config:  nano ${INSTALL_DIR}/config.json"
-echo "    2. Restart:      sudo systemctl restart dak-server"
-echo "    3. View logs:    journalctl -u dak-server -f"
+echo "    2. Restart:      sudo systemctl restart wmd-server"
+echo "    3. View logs:    journalctl -u wmd-server -f"
 echo "    4. Reboot to start Chromium kiosk via labwc autostart."
 echo ""
 echo "  Quick verify:"
-echo "    systemctl status dak-server"
+echo "    systemctl status wmd-server"
 echo "    curl http://localhost:3000/api/data | python3 -m json.tool"

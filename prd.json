@@ -1,7 +1,7 @@
 {
-  "name": "DAK Dashboard",
+  "name": "WMD Dashboard",
   "description": "Self-hosted wall dashboard for Raspberry Pi — iCloud photos, merged ICS calendars, weather forecast, clock, Home Assistant sensors, served by FastAPI with a TypeScript/esbuild frontend in Chromium kiosk mode.",
-  "branchName": "ralph/dak-dashboard",
+  "branchName": "ralph/wmd-dashboard",
   "userStories": [
     {
       "id": "US-001",
@@ -396,8 +396,8 @@
       "title": "systemd Service Files",
       "description": "As a developer, I need systemd service files for the FastAPI server and Chromium kiosk browser so that both auto-start on RPi boot and restart on crash.",
       "acceptanceCriteria": [
-        "systemd/dak-server.service has [Unit] After=network.target Wants=network.target; [Service] User=ubuntu, WorkingDirectory=/home/ubuntu/dak, ExecStart=/home/ubuntu/dak/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000, Restart=always, RestartSec=5, StandardOutput=journal, StandardError=journal; [Install] WantedBy=multi-user.target",
-        "systemd/dak-browser.service has [Unit] After=dak-server.service graphical-session.target Wants=graphical-session.target; [Service] User=ubuntu, DISPLAY=:0, XAUTHORITY=/home/ubuntu/.Xauthority, ExecStartPre=/bin/sleep 3, ExecStart=/usr/bin/chromium-browser with flags --kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-translate --disable-features=Translate http://localhost:3000, Restart=always, RestartSec=5; [Install] WantedBy=graphical-session.target",
+        "systemd/wmd-server.service has [Unit] After=network.target Wants=network.target; [Service] User=ubuntu, WorkingDirectory=/home/ubuntu/wmd, ExecStart=/home/ubuntu/wmd/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 3000, Restart=always, RestartSec=5, StandardOutput=journal, StandardError=journal; [Install] WantedBy=multi-user.target",
+        "systemd/wmd-browser.service has [Unit] After=wmd-server.service graphical-session.target Wants=graphical-session.target; [Service] User=ubuntu, DISPLAY=:0, XAUTHORITY=/home/ubuntu/.Xauthority, ExecStartPre=/bin/sleep 3, ExecStart=/usr/bin/chromium-browser with flags --kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000 --disable-translate --disable-features=Translate http://localhost:3000, Restart=always, RestartSec=5; [Install] WantedBy=graphical-session.target",
         "Both files have a comment noting ubuntu should be replaced with pi on Raspberry Pi OS",
         "Committed to git with message: feat: systemd service files for server and kiosk browser",
         "Typecheck passes"
@@ -419,11 +419,11 @@
         "Setup Step 4 — build frontend: npm install && npm run build",
         "Setup Step 5 — systemd: sudo cp systemd/*.service /etc/systemd/system/, daemon-reload, enable + start both services",
         "Setup Step 6 — auto-login: set graphical.target as default, configure lightdm.conf autologin-user=ubuntu",
-        "Updating config section: edit config.json then sudo systemctl restart dak-server (no rebuild)",
-        "Updating frontend section: npm run build then sudo systemctl restart dak-server",
+        "Updating config section: edit config.json then sudo systemctl restart wmd-server (no rebuild)",
+        "Updating frontend section: npm run build then sudo systemctl restart wmd-server",
         "Calendar ICS URLs section: how to get ICS links from iCloud, Google, MS365/Outlook",
         "iCloud Share Token section: how to extract token from share URL",
-        "Logs section: journalctl -u dak-server -f and journalctl -u dak-browser -f",
+        "Logs section: journalctl -u wmd-server -f and journalctl -u wmd-browser -f",
         "Committed to git with message: docs: deployment guide and setup README",
         "Typecheck passes"
       ],

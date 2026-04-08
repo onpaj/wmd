@@ -1,4 +1,4 @@
-# DAK Dashboard
+# WMD Dashboard
 
 A self-hosted wall dashboard for Raspberry Pi, replacing DAKBoard. Displays photos, calendars, weather, and Home Assistant sensors on a wall-mounted TV via Chromium kiosk mode.
 
@@ -22,8 +22,8 @@ sudo apt install -y chromium-browser unclutter xorg lightdm
 ### Step 2 — Clone and configure
 
 ```bash
-git clone https://github.com/youruser/dak.git
-cd dak
+git clone https://github.com/youruser/wmd.git
+cd wmd
 cp config.example.json config.json
 # Edit config.json with your credentials and settings (see Configuration below)
 nano config.json
@@ -49,8 +49,8 @@ npm run build
 ```bash
 sudo cp systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable dak-server dak-browser
-sudo systemctl start dak-server dak-browser
+sudo systemctl enable wmd-server wmd-browser
+sudo systemctl start wmd-server wmd-browser
 ```
 
 ### Step 6 — Auto-login
@@ -121,7 +121,7 @@ Edit `config.json` (never committed — based on `config.example.json`):
 After editing `config.json`, restart only the backend — no frontend rebuild needed:
 
 ```bash
-sudo systemctl restart dak-server
+sudo systemctl restart wmd-server
 ```
 
 ### Updating frontend
@@ -130,7 +130,7 @@ After changing frontend source files:
 
 ```bash
 npm run build
-sudo systemctl restart dak-server
+sudo systemctl restart wmd-server
 ```
 
 ---
@@ -171,15 +171,15 @@ View live logs for each service:
 
 ```bash
 # Backend (FastAPI)
-journalctl -u dak-server -f
+journalctl -u wmd-server -f
 
 # Browser (Chromium kiosk)
-journalctl -u dak-browser -f
+journalctl -u wmd-browser -f
 ```
 
 To see the last 100 lines without following:
 
 ```bash
-journalctl -u dak-server -n 100
-journalctl -u dak-browser -n 100
+journalctl -u wmd-server -n 100
+journalctl -u wmd-browser -n 100
 ```

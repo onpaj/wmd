@@ -1,8 +1,8 @@
-# PRD: DAK Dashboard
+# PRD: WMD Dashboard
 
 ## Introduction
 
-DAK is a self-hosted wall dashboard running on a Raspberry Pi (Ubuntu Server) connected to a wall-mounted TV. It replaces DAKBoard with a fully custom, locally-hosted solution. The system displays a rotating iCloud shared album photo, a merged multi-calendar event list, a live clock, a 5-day weather forecast, a mini calendar, and Home Assistant entity values.
+WMD is a self-hosted wall dashboard running on a Raspberry Pi (Ubuntu Server) connected to a wall-mounted TV. It replaces DAKBoard with a fully custom, locally-hosted solution. The system displays a rotating iCloud shared album photo, a merged multi-calendar event list, a live clock, a 5-day weather forecast, a mini calendar, and Home Assistant entity values.
 
 The backend is a Python/FastAPI server that fetches and caches all external data. The frontend is a TypeScript app compiled with esbuild — no framework, no page reloads, no flicker. Two systemd services manage the server and the Chromium kiosk browser. The whole system auto-starts on RPi boot.
 
@@ -211,12 +211,12 @@ The backend is a Python/FastAPI server that fetches and caches all external data
 **Description:** As a developer, I need systemd service files so that both the server and the browser start automatically on RPi boot.
 
 **Acceptance Criteria:**
-- [ ] `systemd/dak-server.service` starts uvicorn using the project's `.venv`, restarts on failure, runs after `network.target`
-- [ ] `systemd/dak-browser.service` starts Chromium in `--kiosk` mode at `http://localhost:3000`, runs as user `pi` (or configured user), depends on `dak-server.service` with a 3s pre-start delay
+- [ ] `systemd/wmd-server.service` starts uvicorn using the project's `.venv`, restarts on failure, runs after `network.target`
+- [ ] `systemd/wmd-browser.service` starts Chromium in `--kiosk` mode at `http://localhost:3000`, runs as user `pi` (or configured user), depends on `wmd-server.service` with a 3s pre-start delay
 - [ ] Chromium flags: `--kiosk --noerrdialogs --disable-infobars --no-first-run --check-for-update-interval=31536000`
 - [ ] `DISPLAY=:0` set in browser service environment
 - [ ] Both services have `WantedBy` set correctly (`multi-user.target` for server, `graphical.target` for browser)
-- [ ] `README.md` includes install commands: `sudo cp systemd/*.service /etc/systemd/system/ && sudo systemctl enable dak-server dak-browser`
+- [ ] `README.md` includes install commands: `sudo cp systemd/*.service /etc/systemd/system/ && sudo systemctl enable wmd-server wmd-browser`
 
 ---
 

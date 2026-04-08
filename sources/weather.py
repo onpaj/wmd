@@ -208,7 +208,7 @@ class METNorwayProvider(WeatherProvider):
     async def get_forecast(self, cfg: AppConfig) -> list[WeatherDay]:
         from collections import defaultdict
 
-        headers = {"User-Agent": "DAK-Dashboard/1.0 self-hosted-wall-dashboard"}
+        headers = {"User-Agent": "WMD-Dashboard/1.0 self-hosted-wall-dashboard"}
         params = {"lat": cfg.weather.latitude, "lon": cfg.weather.longitude}
 
         async with httpx.AsyncClient(timeout=30.0) as client:

@@ -188,10 +188,10 @@ after each iteration and it's included in prompts for context.
 
 ## 2026-04-07 - US-018
 - Created systemd service files for server and kiosk browser
-- Files created: systemd/dak-server.service, systemd/dak-browser.service
+- Files created: systemd/wmd-server.service, systemd/wmd-browser.service
 - **Learnings:**
   - `Environment=` lines in systemd [Service] are the correct way to set env vars (not `Environment "KEY=VAL"`)
-  - `After=dak-server.service graphical-session.target` and `Wants=graphical-session.target` ensures browser waits for both the server and the X session
+  - `After=wmd-server.service graphical-session.target` and `Wants=graphical-session.target` ensures browser waits for both the server and the X session
   - `ExecStartPre=/bin/sleep 3` gives the server a few extra seconds to bind its port before Chromium tries to connect
 ---
 

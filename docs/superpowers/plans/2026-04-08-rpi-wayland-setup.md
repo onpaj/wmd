@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Update `deploy.sh` to deploy DAK dashboard on Raspberry Pi OS (Debian Trixie / Wayland / labwc) with 90° clockwise screen rotation, then deploy to the Pi at `rem@192.168.10.66`.
+**Goal:** Update `deploy.sh` to deploy WMD dashboard on Raspberry Pi OS (Debian Trixie / Wayland / labwc) with 90° clockwise screen rotation, then deploy to the Pi at `rem@192.168.10.66`.
 
-**Architecture:** Browser (Chromium) is launched from labwc autostart with `--ozone-platform=wayland` and a restart loop. Screen rotation is applied via `wlr-randr` at session start. The backend (`dak-server`) stays as a systemd system service. `deploy.sh` is piped over SSH so changes take effect without pushing the script itself to the Pi.
+**Architecture:** Browser (Chromium) is launched from labwc autostart with `--ozone-platform=wayland` and a restart loop. Screen rotation is applied via `wlr-randr` at session start. The backend (`wmd-server`) stays as a systemd system service. `deploy.sh` is piped over SSH so changes take effect without pushing the script itself to the Pi.
 
 **Tech Stack:** Bash (deploy.sh), Python 3.13 (XML patching), wlr-randr (Wayland output rotation), labwc (compositor autostart), systemd (backend service), Chromium (kiosk browser)
 
@@ -14,7 +14,7 @@
 
 | File | Action | What changes |
 |------|--------|--------------|
-| `deploy.sh` | Modify | Package list, chromium detection, LightDM block, openbox→labwc autostart, rc.xml idle config, remove dak-browser.service |
+| `deploy.sh` | Modify | Package list, chromium detection, LightDM block, openbox→labwc autostart, rc.xml idle config, remove wmd-browser.service |
 | `DEPLOY.md` | Modify | Rewrite for RPi OS Wayland, update all step references |
 
 ---
@@ -116,14 +116,14 @@ Delete from `# ── 7. Kiosk hardening` to the closing `fi` and replace with:
 ```bash
 # ── 7. labwc autostart: screen rotation + kiosk browser ──────────────────────
 info "Configuring labwc autostart (rotation + kiosk)..."
-LABWC_DIR="/home/${DAK_USER}/.config/labwc"
+LABWC_DIR="/home/${WMD_USER}/.config/labwc"
 mkdir -p "$LABWC_DIR"
 
 cat > "${LABWC_DIR}/autostart" << 'EOF'
 # Screen rotation: detect first connected output, rotate 90° clockwise
 wlr-randr --output "$(wlr-randr | head -1 | awk '{print $1}')" --transform 90
 
-# Wait for dak-server backend to be ready
+# Wait for wmd-server backend to be ready
 sleep 5
 
 # Chromium kiosk — auto-restarts on crash
@@ -167,35 +167,35 @@ info "Screen blanking disabled."
 
 ---
 
-### Task 4: Remove dak-browser.service from deploy.sh
+### Task 4: Remove wmd-browser.service from deploy.sh
 
 **Files:**
 - Modify: `deploy.sh` (step 8, lines ~175–219)
 
-The browser is now managed by labwc autostart, not systemd. Remove the `dak-browser.service` tee block and update the enable/start commands and done message.
+The browser is now managed by labwc autostart, not systemd. Remove the `wmd-browser.service` tee block and update the enable/start commands and done message.
 
-- [ ] **Step 1: Remove the dak-browser.service tee block**
+- [ ] **Step 1: Remove the wmd-browser.service tee block**
 
-Delete the `# Generate dak-browser.service` block (the `sudo tee /etc/systemd/system/dak-browser.service` heredoc and surrounding lines).
+Delete the `# Generate wmd-browser.service` block (the `sudo tee /etc/systemd/system/wmd-browser.service` heredoc and surrounding lines).
 
 - [ ] **Step 2: Update the systemctl enable line**
 
 Replace:
 ```bash
-sudo systemctl enable dak-server dak-browser
+sudo systemctl enable wmd-server wmd-browser
 ```
 With:
 ```bash
-sudo systemctl enable dak-server
+sudo systemctl enable wmd-server
 ```
 
 - [ ] **Step 3: Update the done message**
 
-In the done/summary block at the bottom, remove any reference to `dak-browser` and update the "Next steps" section:
+In the done/summary block at the bottom, remove any reference to `wmd-browser` and update the "Next steps" section:
 
 ```bash
 echo -e "${GREEN}╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║          DAK Dashboard deployment complete           ║${NC}"
+echo -e "${GREEN}║          WMD Dashboard deployment complete           ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo "  Install dir : ${INSTALL_DIR}"
@@ -204,12 +204,12 @@ echo "  Backend     : http://localhost:3000"
 echo ""
 echo "  Next steps:"
 echo "    1. Edit config:  nano ${INSTALL_DIR}/config.json"
-echo "    2. Restart:      sudo systemctl restart dak-server"
-echo "    3. View logs:    journalctl -u dak-server -f"
+echo "    2. Restart:      sudo systemctl restart wmd-server"
+echo "    3. View logs:    journalctl -u wmd-server -f"
 echo "    4. Reboot to start Chromium kiosk via labwc autostart."
 echo ""
 echo "  Quick verify:"
-echo "    systemctl status dak-server"
+echo "    systemctl status wmd-server"
 echo "    curl http://localhost:3000/api/data | python3 -m json.tool"
 ```
 
@@ -231,7 +231,7 @@ Expected: no output (exit code 0).
 - [ ] **Step 2: Verify no stale references remain**
 
 ```bash
-grep -n "openbox\|unclutter\|xset\|CHROMIUM_BIN\|detect_chromium_bin\|chromium-browser\|dak-browser\|autologin-user\|lightdm.conf" deploy.sh
+grep -n "openbox\|unclutter\|xset\|CHROMIUM_BIN\|detect_chromium_bin\|chromium-browser\|wmd-browser\|autologin-user\|lightdm.conf" deploy.sh
 ```
 
 Expected: no output.
@@ -246,7 +246,7 @@ git commit -m "feat: update deploy.sh for Raspberry Pi OS Wayland/labwc
 - Screen rotation via wlr-randr (90° clockwise, dynamic output detection)
 - Chromium kiosk with --ozone-platform=wayland and restart loop
 - Disable screen blanking via labwc rc.xml idle config
-- Remove dak-browser.service (browser managed by labwc autostart)
+- Remove wmd-browser.service (browser managed by labwc autostart)
 - Simplify package list: drop xorg/lightdm/openbox/unclutter
 - Skip LightDM config block (already configured on RPi OS)
 
@@ -268,7 +268,7 @@ Rewrite to reflect the RPi OS Wayland setup. Keep the structure but replace Ubun
 Overwrite `DEPLOY.md` with:
 
 ```markdown
-# DAK Dashboard — Deployment Guide
+# WMD Dashboard — Deployment Guide
 
 Target platform: Raspberry Pi running Raspberry Pi OS (Debian Trixie, Wayland/labwc).
 
@@ -308,7 +308,7 @@ This pipes `deploy.sh` over SSH and runs it as your Pi user. The script is idemp
    - Rotates display 90° clockwise via `wlr-randr` (detects output name dynamically)
    - Launches Chromium in Wayland kiosk mode, auto-restarts on crash
 7. **Screen blanking** — disables idle monitor timeout in `~/.config/labwc/rc.xml`
-8. **dak-server** — installs and enables systemd service (backend on port 3000)
+8. **wmd-server** — installs and enables systemd service (backend on port 3000)
 
 ---
 
@@ -336,11 +336,11 @@ See `CLAUDE.md` for the full config schema.
 
 ```bash
 # Backend running?
-ssh rem@192.168.10.66 'systemctl status dak-server'
+ssh rem@192.168.10.66 'systemctl status wmd-server'
 ssh rem@192.168.10.66 'curl -s http://localhost:3000/api/data | python3 -m json.tool | head -20'
 
 # Follow logs
-ssh rem@192.168.10.66 'journalctl -u dak-server -f'
+ssh rem@192.168.10.66 'journalctl -u wmd-server -f'
 ```
 
 Reboot the Pi to start the full kiosk session (labwc autostart launches Chromium):
@@ -358,7 +358,7 @@ ssh rem@192.168.10.66 'sudo reboot'
 ./deploy-to-pi.sh rem@192.168.10.66 https://github.com/onpaj/wmd.git
 
 # Then restart backend
-ssh rem@192.168.10.66 'sudo systemctl restart dak-server'
+ssh rem@192.168.10.66 'sudo systemctl restart wmd-server'
 ```
 
 ---
@@ -366,8 +366,8 @@ ssh rem@192.168.10.66 'sudo systemctl restart dak-server'
 ## Troubleshooting
 
 **Backend not responding**
-- `ssh rem@192.168.10.66 'systemctl status dak-server'`
-- `ssh rem@192.168.10.66 'journalctl -u dak-server -b'`
+- `ssh rem@192.168.10.66 'systemctl status wmd-server'`
+- `ssh rem@192.168.10.66 'journalctl -u wmd-server -b'`
 
 **Chromium not starting / wrong orientation**
 - Check labwc autostart: `ssh rem@192.168.10.66 'cat ~/.config/labwc/autostart'`
@@ -408,7 +408,7 @@ git push origin master
 
 Expected: script runs to completion, ends with the green summary box. Watch for any `[ERROR]` lines.
 
-- [ ] **Step 2: Verify dak-server is up**
+- [ ] **Step 2: Verify wmd-server is up**
 
 ```bash
 ssh -i ~/.ssh/id_ed25519_rpi rem@192.168.10.66 'curl -s http://localhost:3000/api/data | python3 -m json.tool | head -5'
@@ -438,10 +438,10 @@ Expected: contains `<monitor timeout="0"/>` inside `<idle>`.
 ssh -i ~/.ssh/id_ed25519_rpi rem@192.168.10.66 'sudo reboot'
 ```
 
-After ~30 seconds, the display should show the DAK dashboard in portrait mode (90° CW rotation). Verify remotely that the backend is still running:
+After ~30 seconds, the display should show the WMD dashboard in portrait mode (90° CW rotation). Verify remotely that the backend is still running:
 
 ```bash
-sleep 35 && ssh -i ~/.ssh/id_ed25519_rpi rem@192.168.10.66 'systemctl status dak-server --no-pager'
+sleep 35 && ssh -i ~/.ssh/id_ed25519_rpi rem@192.168.10.66 'systemctl status wmd-server --no-pager'
 ```
 
 Expected: `active (running)`.

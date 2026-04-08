@@ -29,10 +29,10 @@ _TTLS = {
     "outdoor_temp": 60,
 }
 
-_FETCH_TIMEOUT = 60  # hard ceiling per source fetch, in seconds
+_FETCH_TIMEOUT: float = 60.0  # hard ceiling per source fetch, in seconds
 
 
-def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
+def _backoff_delay(consecutive_failures: int, ttl: int) -> int:
     if consecutive_failures == 0:
         return ttl
     return min(10 * (2 ** (consecutive_failures - 1)), ttl)
@@ -101,12 +101,12 @@ def create_app(config_path: str = "config.json") -> FastAPI:
                     value = _to_weather_models(value)
                 cache.set(key, value, ttl)
                 consecutive_failures = 0
-            except asyncio.TimeoutError:
+            except asyncio.TimeoutError:  # must precede Exception; TimeoutError is a subclass of Exception
                 consecutive_failures += 1
-                logger.warning("Fetch timeout for %s (attempt %d)", key, consecutive_failures)
+                logger.warning("Fetch timeout for %s (failure %d)", key, consecutive_failures)
             except Exception:
                 consecutive_failures += 1
-                logger.exception("Background refresh failed for %s (attempt %d)", key, consecutive_failures)
+                logger.exception("Background refresh failed for %s (failure %d)", key, consecutive_failures)
 
     app.state.populate_cache = _populate_cache
 

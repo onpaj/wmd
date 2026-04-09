@@ -29,11 +29,23 @@ export interface HaEntity {
   unit: string;
 }
 
-export interface Meals {
-  soup_today: string;
-  soup_tomorrow: string;
-  lunch_today: string;
-  lunch_tomorrow: string;
+export interface StravaPersonStatus {
+  name: string;
+  color: string | null;
+  ordered: boolean | null;   // null = all of this person's accounts failed to fetch
+}
+
+export interface StravaDay {
+  date: string;              // "YYYY-MM-DD"
+  soup: string | null;
+  meal: string | null;
+  people: StravaPersonStatus[];
+}
+
+export interface StravaMeals {
+  today: StravaDay | null;
+  tomorrow: StravaDay | null;
+  breaking_time: string;     // "HH:MM"
 }
 
 export interface GardenTemps {
@@ -51,7 +63,7 @@ export interface DashboardData {
   mini_cal_events: CalendarEvent[];
   weather: WeatherDay[];
   ha_entities: HaEntity[];
-  meals: Meals | null;
+  meals: StravaMeals | null;
   outdoor_temp: number | null;
   garden_temps: GardenTemps | null;
   photo_interval_seconds: number;

@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 
 import httpx
 
-from config import AppConfig
+from config import AppConfig, StravaPersonConfig
 from models import StravaDay, StravaMeals, StravaPersonStatus
 
 logger = logging.getLogger(__name__)
@@ -38,13 +38,15 @@ async def _fetch_account_days(
     """Login to one canteen sub-account, fetch its order schedule.
     Returns {date: (soup, meal, ordered)}.
     """
-    account_sid = await _post(client, "canteenLoginPA", {
+    account_sid: str = await _post(client, "canteenLoginPA", {  # type: ignore[assignment]
         "sid": parent_sid,
         "cislo": cislo,
         "id": account_id,
         "environment": "W",
         "lang": "EN",
     })
+    if not isinstance(account_sid, str):
+        raise ValueError(f"canteenLoginPA returned unexpected type {type(account_sid)!r}, expected str")
     # nactiVlastnostiPA is required to initialize the S5 server session
     await _post(client, "nactiVlastnostiPA", {
         "sid": account_sid,
@@ -135,7 +137,7 @@ async def get_strava_meals(cfg: AppConfig, _today: date | None = None) -> Strava
                 return soup, meal
         return None
 
-    def _aggregate_ordered(person, day: date) -> bool | None:
+    def _aggregate_ordered(person: StravaPersonConfig, day: date) -> bool | None:
         """OR over person's accounts. None if all accounts failed or have no data for this day."""
         saw_data = False
         for aid in person.accounts:

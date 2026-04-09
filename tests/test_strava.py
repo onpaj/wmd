@@ -177,3 +177,10 @@ async def test_returns_none_when_strava_not_configured():
     cfg.strava = None
     result = await get_strava_meals(cfg)
     assert result is None
+
+
+async def test_returns_none_when_people_list_is_empty():
+    """Empty people list (strava configured but no people) should return None."""
+    cfg = make_cfg([])
+    result = await get_strava_meals(cfg)
+    assert result is None

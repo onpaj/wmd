@@ -20,6 +20,7 @@ function renderMarks(day: StravaDay | null): void {
     const dot = document.createElement('span');
     dot.className = 'meal-mark';
     dot.title = p.name;
+    dot.textContent = p.name.charAt(0).toUpperCase();
     if (p.ordered === true) {
       dot.classList.add('ordered');
       if (p.color) dot.style.background = p.color;
@@ -71,16 +72,20 @@ export function startClock(container: HTMLElement): void {
   const mealsEl = document.createElement('div');
   mealsEl.id = 'clock-meals';
 
+  _marksEl = document.createElement('div');
+  _marksEl.id = 'clock-meal-marks';
+
+  const mealTextEl = document.createElement('div');
+  mealTextEl.id = 'clock-meal-text';
+
   _soupEl = document.createElement('div');
   _soupEl.id = 'clock-soup';
 
   _lunchEl = document.createElement('div');
   _lunchEl.id = 'clock-lunch';
 
-  _marksEl = document.createElement('div');
-  _marksEl.id = 'clock-meal-marks';
-
-  mealsEl.append(_soupEl, _lunchEl, _marksEl);
+  mealTextEl.append(_soupEl, _lunchEl);
+  mealsEl.append(_marksEl, mealTextEl);
   container.append(topRowEl, mealsEl);
 
   function tick(): void {

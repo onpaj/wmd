@@ -12,9 +12,11 @@ from sources.calendar import get_events
 FIXTURES = Path(__file__).parent / "fixtures"
 SIMPLE_ICS = (FIXTURES / "simple.ics").read_bytes()
 RECURRING_ICS = (FIXTURES / "recurring.ics").read_bytes()
+RECURRING_OVERRIDE_ICS = (FIXTURES / "recurring_override.ics").read_bytes()
 
 CAL_URL = "http://test.example.com/cal.ics"
 RECURRING_URL = "http://test.example.com/recurring.ics"
+RECURRING_OVERRIDE_URL = "http://test.example.com/recurring_override.ics"
 
 
 def make_config(url: str = CAL_URL, color: str = "#FF0000", calendar_days_ahead: int = 2) -> AppConfig:
@@ -146,3 +148,18 @@ async def test_exclude_patterns_filters_recurring_events():
         events = await get_events(cfg)
 
     assert events == []
+
+
+@respx.mock
+async def test_recurrence_id_override_no_duplicate():
+    """A modified occurrence (RECURRENCE-ID) must not produce a duplicate event."""
+    respx.get(RECURRING_OVERRIDE_URL).mock(return_value=httpx.Response(200, content=RECURRING_OVERRIDE_ICS))
+    cfg = make_config(url=RECURRING_OVERRIDE_URL, calendar_days_ahead=0)
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    mm_events = [e for e in events if e.title == "MM Sync"]
+    assert len(mm_events) == 1, f"Expected 1 MM Sync event, got {len(mm_events)}"
+    # The rescheduled occurrence starts at 11:00, not 14:30
+    assert mm_events[0].start.hour == 11

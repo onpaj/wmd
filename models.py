@@ -34,11 +34,23 @@ class HaEntity(BaseModel):
     unit: str
 
 
-class Meals(BaseModel):
-    soup_today: str
-    soup_tomorrow: str
-    lunch_today: str
-    lunch_tomorrow: str
+class StravaPersonStatus(BaseModel):
+    name: str
+    color: str | None = None
+    ordered: bool | None = None   # None = fetch failed for all of this person's accounts
+
+
+class StravaDay(BaseModel):
+    date: str                      # "YYYY-MM-DD"
+    soup: str | None
+    meal: str | None
+    people: list[StravaPersonStatus]
+
+
+class StravaMeals(BaseModel):
+    today: StravaDay | None
+    tomorrow: StravaDay | None
+    breaking_time: str             # "HH:MM" — before this show today, at/after show tomorrow
 
 
 class GardenTemps(BaseModel):
@@ -56,7 +68,7 @@ class DashboardData(BaseModel):
     mini_cal_events: list[CalendarEvent]
     weather: list[WeatherDay]
     ha_entities: list[HaEntity]
-    meals: Meals | None
+    meals: StravaMeals | None
     outdoor_temp: float | None
     garden_temps: GardenTemps | None = None
     photo_interval_seconds: int

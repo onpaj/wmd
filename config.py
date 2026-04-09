@@ -35,10 +35,6 @@ class HomeAssistantConfig:
     url: str
     token: str
     entities: list[HaEntityConfig]
-    lunch_today_entity_id: str = ""
-    lunch_tomorrow_entity_id: str = ""
-    soup_today_entity_id: str = ""
-    soup_tomorrow_entity_id: str = ""
     outside_temperature_entity_id: str = ""
     glasshouse_entity_id: str = ""
     coop_entity_id: str = ""
@@ -135,10 +131,6 @@ def load_config(path: str = "config.json") -> AppConfig:
         url=ha_data["url"],
         token=ha_data["token"],
         entities=[HaEntityConfig(entity_id=e["id"], label=e.get("label", "")) for e in ha_data.get("entities", [])],
-        lunch_today_entity_id=ha_data.get("lunchTodayEntityId", ""),
-        lunch_tomorrow_entity_id=ha_data.get("lunchTomorrowEntityId", ""),
-        soup_today_entity_id=ha_data.get("soupTodayEntityId", ""),
-        soup_tomorrow_entity_id=ha_data.get("soupTomorrowEntityId", ""),
         outside_temperature_entity_id=ha_data.get("outsideTemperature", ""),
         glasshouse_entity_id=ha_data.get("glasshouseEntityId", ""),
         coop_entity_id=ha_data.get("coopEntityId", ""),

@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 from config import AppConfig
-from models import GardenTemps, HaEntity, Meals
+from models import GardenTemps, HaEntity
 
 
 async def _fetch_entity(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str, label: str) -> HaEntity | None:
@@ -20,31 +20,6 @@ async def _fetch_entity(client: httpx.AsyncClient, ha_url: str, token: str, enti
         return HaEntity(id=entity_id, label=label, state=data["state"], unit=unit)
     except Exception:
         return None
-
-
-async def get_meals(cfg: AppConfig) -> Meals | None:
-    ha = cfg.home_assistant
-    ids = [ha.soup_today_entity_id, ha.soup_tomorrow_entity_id, ha.lunch_today_entity_id, ha.lunch_tomorrow_entity_id]
-    if not all(ids):
-        return None
-
-    ha_url = ha.url.rstrip("/")
-    token = ha.token
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        results = await asyncio.gather(
-            *[_fetch_entity(client, ha_url, token, eid, "") for eid in ids],
-            return_exceptions=True,
-        )
-
-    def _state(r: object) -> str:
-        return r.state if isinstance(r, HaEntity) else ""
-
-    return Meals(
-        soup_today=_state(results[0]),
-        soup_tomorrow=_state(results[1]),
-        lunch_today=_state(results[2]),
-        lunch_tomorrow=_state(results[3]),
-    )
 
 
 async def get_outdoor_temp(cfg: AppConfig) -> float | None:

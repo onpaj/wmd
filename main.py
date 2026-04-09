@@ -15,6 +15,7 @@ from sources.calendar import get_events, get_mini_cal_events
 from sources.ms365 import get_ms365_events
 from sources.homeassistant import get_entities, get_garden_temps, get_outdoor_temp
 from sources.icloud import get_photo_url, get_photos
+from sources.strava import get_strava_meals
 from sources.weather import get_forecast
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ _TTLS = {
     "mini_cal_events": 3600,
     "weather": 1800,
     "ha_entities": 60,
-    "meals": 300,
+    "meals": 1800,
     "outdoor_temp": 60,
     "garden_temps": 60,
 }
@@ -60,13 +61,14 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         ]
 
     async def _populate_cache() -> None:
-        photos, ics_events, ms365_events, mini_cal, forecast, ha, outdoor_temp, garden_temps = await asyncio.gather(
+        photos, ics_events, ms365_events, mini_cal, forecast, ha, meals, outdoor_temp, garden_temps = await asyncio.gather(
             get_photos(config),
             get_events(config),
             get_ms365_events(config),
             get_mini_cal_events(config),
             get_forecast(config),
             get_entities(config),
+            get_strava_meals(config),
             get_outdoor_temp(config),
             get_garden_temps(config),
             return_exceptions=True,
@@ -87,6 +89,8 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             cache.set("weather", _to_weather_models(forecast), _TTLS["weather"])
         if not isinstance(ha, BaseException):
             cache.set("ha_entities", ha, _TTLS["ha_entities"])
+        if not isinstance(meals, BaseException):
+            cache.set("meals", meals, _TTLS["meals"])
         if not isinstance(outdoor_temp, BaseException):
             cache.set("outdoor_temp", outdoor_temp, _TTLS["outdoor_temp"])
         if not isinstance(garden_temps, BaseException):
@@ -129,6 +133,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         asyncio.create_task(_refresh_loop("mini_cal_events", lambda: get_mini_cal_events(config), _TTLS["mini_cal_events"]))
         asyncio.create_task(_refresh_loop("weather", lambda: get_forecast(config), _TTLS["weather"]))
         asyncio.create_task(_refresh_loop("ha_entities", lambda: get_entities(config), _TTLS["ha_entities"]))
+        asyncio.create_task(_refresh_loop("meals", lambda: get_strava_meals(config), _TTLS["meals"]))
         asyncio.create_task(_refresh_loop("outdoor_temp", lambda: get_outdoor_temp(config), _TTLS["outdoor_temp"]))
         asyncio.create_task(_refresh_loop("garden_temps", lambda: get_garden_temps(config), _TTLS["garden_temps"]))
 

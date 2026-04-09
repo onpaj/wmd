@@ -76,6 +76,22 @@ class Ms365Config:
 
 
 @dataclass
+class StravaPersonConfig:
+    name: str
+    accounts: list[str]
+    color: Optional[str] = None
+
+
+@dataclass
+class StravaConfig:
+    email: str
+    password: str
+    canteen_number: str = "1019"
+    breaking_time: str = "12:30"
+    people: list[StravaPersonConfig] = field(default_factory=list)
+
+
+@dataclass
 class AppConfig:
     icloud: ICloudConfig
     calendars: list[CalendarConfig]
@@ -84,6 +100,7 @@ class AppConfig:
     display: DisplayConfig
     mini_calendar: MiniCalendarConfig = field(default_factory=lambda: MiniCalendarConfig(url="", color="#FFC107"))
     ms365: Optional[Ms365Config] = None
+    strava: Optional[StravaConfig] = None
 
 
 def load_config(path: str = "config.json") -> AppConfig:
@@ -153,6 +170,24 @@ def load_config(path: str = "config.json") -> AppConfig:
             users=[Ms365UserConfig(email=u["email"], name=u["name"], color=u["color"]) for u in m.get("users", [])],
         )
 
+    strava = None
+    if "strava" in data:
+        s = data["strava"]
+        strava = StravaConfig(
+            email=s["email"],
+            password=s["password"],
+            canteen_number=s.get("canteenNumber", "1019"),
+            breaking_time=s.get("breakingTime", "12:30"),
+            people=[
+                StravaPersonConfig(
+                    name=p["name"],
+                    accounts=list(p["accounts"]),
+                    color=p.get("color"),
+                )
+                for p in s.get("people", [])
+            ],
+        )
+
     return AppConfig(
         icloud=icloud,
         calendars=calendars,
@@ -161,4 +196,5 @@ def load_config(path: str = "config.json") -> AppConfig:
         display=display,
         mini_calendar=mini_calendar,
         ms365=ms365,
+        strava=strava,
     )

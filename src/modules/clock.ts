@@ -1,28 +1,52 @@
-import { Meals } from '../types';
+import { StravaMeals, StravaDay } from '../types';
 
 let _soupEl: HTMLElement | null = null;
 let _lunchEl: HTMLElement | null = null;
+let _marksEl: HTMLElement | null = null;
 let _tempEl: HTMLElement | null = null;
-let _meals: Meals | null = null;
+let _meals: StravaMeals | null = null;
 
-function isBefore1230(): boolean {
+function isBeforeBreakingTime(breakingTime: string): boolean {
+  const [h, m] = breakingTime.split(':').map(Number);
   const now = new Date();
-  return now.getHours() < 12 || (now.getHours() === 12 && now.getMinutes() < 30);
+  return now.getHours() < h || (now.getHours() === h && now.getMinutes() < m);
+}
+
+function renderMarks(day: StravaDay | null): void {
+  if (!_marksEl) return;
+  _marksEl.innerHTML = '';
+  if (!day) return;
+  for (const p of day.people) {
+    const dot = document.createElement('span');
+    dot.className = 'meal-mark';
+    dot.title = p.name;
+    if (p.ordered === true) {
+      dot.classList.add('ordered');
+      if (p.color) dot.style.background = p.color;
+    } else if (p.ordered === false) {
+      dot.classList.add('not-ordered');
+    } else {
+      dot.classList.add('unknown');
+    }
+    _marksEl.appendChild(dot);
+  }
 }
 
 function renderMeals(): void {
-  if (!_soupEl || !_lunchEl) return;
+  if (!_soupEl || !_lunchEl || !_marksEl) return;
   if (!_meals) {
     _soupEl.textContent = '';
     _lunchEl.textContent = '';
+    _marksEl.innerHTML = '';
     return;
   }
-  const showToday = isBefore1230();
-  _soupEl.textContent = showToday ? _meals.soup_today : _meals.soup_tomorrow;
-  _lunchEl.textContent = showToday ? _meals.lunch_today : _meals.lunch_tomorrow;
+  const day = isBeforeBreakingTime(_meals.breaking_time) ? _meals.today : _meals.tomorrow;
+  _soupEl.textContent  = day?.soup  ?? '';
+  _lunchEl.textContent = day?.meal  ?? '';
+  renderMarks(day ?? null);
 }
 
-export function updateMeals(meals: Meals | null): void {
+export function updateMeals(meals: StravaMeals | null): void {
   _meals = meals;
   renderMeals();
 }
@@ -49,10 +73,14 @@ export function startClock(container: HTMLElement): void {
 
   _soupEl = document.createElement('div');
   _soupEl.id = 'clock-soup';
+
   _lunchEl = document.createElement('div');
   _lunchEl.id = 'clock-lunch';
-  mealsEl.append(_soupEl, _lunchEl);
 
+  _marksEl = document.createElement('div');
+  _marksEl.id = 'clock-meal-marks';
+
+  mealsEl.append(_soupEl, _lunchEl, _marksEl);
   container.append(topRowEl, mealsEl);
 
   function tick(): void {

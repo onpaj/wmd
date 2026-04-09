@@ -35,11 +35,14 @@ def _parse_ics(
     events: list[CalendarEvent] = []
     compiled = [re.compile(p, re.IGNORECASE) for p in cal_cfg.exclude_patterns]
 
-    # First pass: collect RECURRENCE-ID overrides per UID (naive UTC datetimes).
-    # These are modified occurrences; their original scheduled time must be skipped
-    # when expanding the master RRULE to avoid showing both the original and the
-    # rescheduled version.
-    recurrence_overrides: dict[str, set[datetime]] = {}
+    # First pass: collect RECURRENCE-ID overrides per UID, stored as calendar dates.
+    # These are modified (or deleted) occurrences; their original date must be
+    # skipped when expanding the master RRULE to avoid showing both the original
+    # and the rescheduled version.  We match by date rather than exact UTC time
+    # because RRULE expansion uses ignoretz=True (naive UTC from winter DTSTART)
+    # while RECURRENCE-ID datetimes carry summer/winter offsets — the two can
+    # differ by an hour across DST transitions.
+    recurrence_overrides: dict[str, set[date]] = {}
     for component in cal.walk():
         if component.name != "VEVENT":
             continue
@@ -47,9 +50,9 @@ def _parse_ics(
         if recurrence_id_prop is None:
             continue
         uid = str(component.get("UID", ""))
-        recurrence_overrides.setdefault(uid, set()).add(
-            _to_utc_datetime(recurrence_id_prop.dt).replace(tzinfo=None)
-        )
+        rid = recurrence_id_prop.dt
+        rid_date = rid if isinstance(rid, date) and not isinstance(rid, datetime) else _to_utc_datetime(rid).date()
+        recurrence_overrides.setdefault(uid, set()).add(rid_date)
 
     for component in cal.walk():
         if component.name != "VEVENT":
@@ -92,7 +95,8 @@ def _parse_ics(
 
             # Also skip occurrences that have a RECURRENCE-ID override (those
             # VEVENTs are processed separately as standalone events below).
-            overrides = recurrence_overrides.get(uid, set())
+            # Match by date only — exact UTC times differ across DST transitions.
+            override_dates = recurrence_overrides.get(uid, set())
 
             duration = _to_utc_datetime(raw_end) - dtstart_dt
 
@@ -101,7 +105,7 @@ def _parse_ics(
                 window_end.replace(tzinfo=None),
                 inc=True,
             ):
-                if occurrence in exdates or occurrence in overrides:
+                if occurrence in exdates or occurrence.date() in override_dates:
                     continue
                 occ_start = occurrence.replace(tzinfo=timezone.utc)
                 occ_end = occ_start + duration

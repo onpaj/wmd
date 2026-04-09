@@ -152,14 +152,20 @@ async def test_exclude_patterns_filters_recurring_events():
 
 @respx.mock
 async def test_recurrence_id_override_no_duplicate():
-    """A modified occurrence (RECURRENCE-ID) must not produce a duplicate event."""
+    """A modified occurrence (RECURRENCE-ID) must not produce a duplicate event.
+
+    The fixture has a weekly-Thursday series starting 2026-03-12 14:30 CET.
+    The 2026-04-09 occurrence has a RECURRENCE-ID override at 14:30 CEST (+02:00),
+    which is 12:30 UTC — one hour earlier than the naïve UTC from the master RRULE
+    (13:30 UTC).  Both must collapse to exactly one event on 2026-04-09.
+    """
     respx.get(RECURRING_OVERRIDE_URL).mock(return_value=httpx.Response(200, content=RECURRING_OVERRIDE_ICS))
-    cfg = make_config(url=RECURRING_OVERRIDE_URL, calendar_days_ahead=0)
+    # calendar_days_ahead=2 puts 2026-04-09 inside the window (FIXED_NOW = 2026-04-07)
+    cfg = make_config(url=RECURRING_OVERRIDE_URL, calendar_days_ahead=2)
 
     with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
         events = await get_events(cfg)
 
     mm_events = [e for e in events if e.title == "MM Sync"]
-    assert len(mm_events) == 1, f"Expected 1 MM Sync event, got {len(mm_events)}"
-    # The rescheduled occurrence starts at 11:00, not 14:30
-    assert mm_events[0].start.hour == 11
+    assert len(mm_events) == 1, f"Expected 1 MM Sync event, got {len(mm_events)}: {[(e.start, e.title) for e in mm_events]}"
+    assert mm_events[0].start.date().isoformat() == "2026-04-09"

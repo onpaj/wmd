@@ -38,3 +38,36 @@
   opacity: 0.85;
   text-align: right;
 }
+
+#clock-meal-marks {
+  display: flex;
+  flex-direction: row;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  justify-content: flex-end;
+}
+
+.meal-mark {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ordered: green fill (overridden per-person with inline style if color set in config) */
+.meal-mark.ordered {
+  background: #4CAF50;
+}
+
+/* not ordered: transparent with red border */
+.meal-mark.not-ordered {
+  background: transparent;
+  border-color: #F44336;
+}
+
+/* unknown: all accounts failed to fetch */
+.meal-mark.unknown {
+  background: #9E9E9E;
+  opacity: 0.5;
+}

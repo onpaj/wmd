@@ -30,5 +30,14 @@
   "display": {
     "calendarDaysAhead": 2,
     "weatherDays": 5
+  },
+  "strava": {
+    "email": "",
+    "password": "",
+    "canteenNumber": "1019",
+    "breakingTime": "12:30",
+    "people": [
+      {"name": "Child", "color": "#4CAF50", "accounts": ["child.strava.login"]}
+    ]
   }
 }

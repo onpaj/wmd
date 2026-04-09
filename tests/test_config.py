@@ -1,5 +1,5 @@
 import json
-from config import load_config, StravaConfig, StravaPersonConfig
+from config import load_config
 
 
 def test_load_config_returns_typed_object(sample_config):

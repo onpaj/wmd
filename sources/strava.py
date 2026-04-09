@@ -68,6 +68,8 @@ async def _fetch_account_days(
         "ignoreCert": "false",
     })
 
+    if not isinstance(orders, dict):
+        raise ValueError(f"objednavky returned unexpected response type: {type(orders)!r}")
     result: dict[date, tuple[str | None, str | None, bool]] = {}
     i = 0
     while f"table{i}" in orders:
@@ -116,6 +118,8 @@ async def get_strava_meals(cfg: AppConfig, _today: date | None = None) -> Strava
             "zustatPrihlasen": False,
             "lang": "EN",
         })
+        if not isinstance(login_data, dict) or "SID" not in login_data:
+            raise ValueError(f"loginPA returned unexpected response: {login_data!r}")
         parent_sid: str = login_data["SID"]
 
         async def _one(account_id: str) -> tuple[str, dict[date, tuple] | None]:

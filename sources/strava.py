@@ -130,7 +130,10 @@ async def get_strava_meals(cfg: AppConfig, _today: date | None = None) -> Strava
                 logger.exception("Strava fetch failed for account %s", account_id)
                 return account_id, None
 
-        results = dict(await asyncio.gather(*[_one(aid) for aid in all_account_ids]))
+        results: dict[str, dict[date, tuple] | None] = {}
+        for aid in all_account_ids:
+            _, days = await _one(aid)
+            results[aid] = days
 
     def _canonical_text(day: date) -> tuple[str | None, str | None] | None:
         """Take meal text from the first account that has data for this day."""

@@ -80,9 +80,18 @@ def _parse_ics(
             # Expand recurring events
             rrule_str = component["RRULE"].to_ical().decode()
             dtstart_dt = _to_utc_datetime(raw_start)
-            dtstart_naive = dtstart_dt.replace(tzinfo=None)
 
-            rule = rrulestr(rrule_str, dtstart=dtstart_naive, ignoretz=True)
+            # For timezone-aware events, expand in the original timezone so that
+            # wall-clock time is preserved across DST transitions (e.g. a 09:00
+            # CET event should still show as 09:00 CEST in summer, not 10:00).
+            # For floating/naive datetimes there is no timezone to preserve, so
+            # we fall back to treating them as UTC.
+            has_tz = isinstance(raw_start, datetime) and raw_start.tzinfo is not None
+            if has_tz:
+                rule = rrulestr(rrule_str, dtstart=raw_start, ignoretz=False)
+            else:
+                dtstart_naive = dtstart_dt.replace(tzinfo=None)
+                rule = rrulestr(rrule_str, dtstart=dtstart_naive, ignoretz=True)
 
             # Collect EXDATE values (naive UTC)
             exdates: set[datetime] = set()
@@ -100,28 +109,48 @@ def _parse_ics(
 
             duration = _to_utc_datetime(raw_end) - dtstart_dt
 
-            for occurrence in rule.between(
-                window_start.replace(tzinfo=None),
-                window_end.replace(tzinfo=None),
-                inc=True,
-            ):
-                if occurrence in exdates or occurrence.date() in override_dates:
-                    continue
-                occ_start = occurrence.replace(tzinfo=timezone.utc)
-                occ_end = occ_start + duration
-                event_id = hashlib.md5(f"{uid}-{occ_start.isoformat()}".encode()).hexdigest()
-                events.append(
-                    CalendarEvent(
-                        id=event_id,
-                        title=summary,
-                        start=occ_start,
-                        end=occ_end,
-                        all_day=all_day,
-                        calendar_name=cal_cfg.name,
-                        color=cal_cfg.color,
-                        location=location,
+            if has_tz:
+                for occurrence in rule.between(window_start, window_end, inc=True):
+                    occ_start = occurrence.astimezone(timezone.utc)
+                    if occ_start.replace(tzinfo=None) in exdates or occ_start.date() in override_dates:
+                        continue
+                    occ_end = occ_start + duration
+                    event_id = hashlib.md5(f"{uid}-{occ_start.isoformat()}".encode()).hexdigest()
+                    events.append(
+                        CalendarEvent(
+                            id=event_id,
+                            title=summary,
+                            start=occ_start,
+                            end=occ_end,
+                            all_day=all_day,
+                            calendar_name=cal_cfg.name,
+                            color=cal_cfg.color,
+                            location=location,
+                        )
                     )
-                )
+            else:
+                for occurrence in rule.between(
+                    window_start.replace(tzinfo=None),
+                    window_end.replace(tzinfo=None),
+                    inc=True,
+                ):
+                    if occurrence in exdates or occurrence.date() in override_dates:
+                        continue
+                    occ_start = occurrence.replace(tzinfo=timezone.utc)
+                    occ_end = occ_start + duration
+                    event_id = hashlib.md5(f"{uid}-{occ_start.isoformat()}".encode()).hexdigest()
+                    events.append(
+                        CalendarEvent(
+                            id=event_id,
+                            title=summary,
+                            start=occ_start,
+                            end=occ_end,
+                            all_day=all_day,
+                            calendar_name=cal_cfg.name,
+                            color=cal_cfg.color,
+                            location=location,
+                        )
+                    )
         else:
             start_dt = _to_utc_datetime(raw_start)
             end_dt = _to_utc_datetime(raw_end)

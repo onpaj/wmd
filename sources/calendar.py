@@ -3,6 +3,7 @@ import hashlib
 import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 from dateutil.rrule import rrulestr
@@ -14,6 +15,27 @@ from models import CalendarEvent
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _localize_with_tzid(dt_prop: Any, raw_dt: Any) -> Any:
+    """Re-localize a timezone-aware datetime using zoneinfo when a TZID param is present.
+
+    icalendar may attach a fixed-offset tzinfo built from the VTIMEZONE component
+    (e.g. always UTC+1 for Europe/Prague) instead of a proper DST-aware object.
+    Re-applying the TZID via zoneinfo.ZoneInfo ensures the correct UTC offset for
+    any date, including those that fall in DST (summer time).
+    """
+    if not isinstance(raw_dt, datetime) or raw_dt.tzinfo is None:
+        return raw_dt
+    params = getattr(dt_prop, "params", {}) or {}
+    tzid = params.get("TZID")
+    if not tzid:
+        return raw_dt
+    try:
+        tz = ZoneInfo(tzid)
+        return raw_dt.replace(tzinfo=None).replace(tzinfo=tz)
+    except (ZoneInfoNotFoundError, KeyError):
+        return raw_dt
 
 
 def _to_utc_datetime(dt: Any) -> datetime:
@@ -39,9 +61,7 @@ def _parse_ics(
     # These are modified (or deleted) occurrences; their original date must be
     # skipped when expanding the master RRULE to avoid showing both the original
     # and the rescheduled version.  We match by date rather than exact UTC time
-    # because RRULE expansion uses ignoretz=True (naive UTC from winter DTSTART)
-    # while RECURRENCE-ID datetimes carry summer/winter offsets — the two can
-    # differ by an hour across DST transitions.
+    # to stay robust across DST transitions.
     recurrence_overrides: dict[str, set[date]] = {}
     for component in cal.walk():
         if component.name != "VEVENT":
@@ -50,7 +70,7 @@ def _parse_ics(
         if recurrence_id_prop is None:
             continue
         uid = str(component.get("UID", ""))
-        rid = recurrence_id_prop.dt
+        rid = _localize_with_tzid(recurrence_id_prop, recurrence_id_prop.dt)
         rid_date = rid if isinstance(rid, date) and not isinstance(rid, datetime) else _to_utc_datetime(rid).date()
         recurrence_overrides.setdefault(uid, set()).add(rid_date)
 
@@ -61,10 +81,10 @@ def _parse_ics(
         dtstart_prop = component.get("DTSTART")
         if dtstart_prop is None:
             continue
-        raw_start = dtstart_prop.dt
+        raw_start = _localize_with_tzid(dtstart_prop, dtstart_prop.dt)
 
         dtend_prop = component.get("DTEND") or component.get("DUE")
-        raw_end = dtend_prop.dt if dtend_prop else raw_start
+        raw_end = _localize_with_tzid(dtend_prop, dtend_prop.dt) if dtend_prop else raw_start
 
         all_day = isinstance(raw_start, date) and not isinstance(raw_start, datetime)
 

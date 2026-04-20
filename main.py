@@ -1,6 +1,10 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+import subprocess
+from datetime import datetime, time, timezone
+from zoneinfo import ZoneInfo
+
+_PRAGUE = ZoneInfo("Europe/Prague")
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -11,7 +15,7 @@ from cache import Cache
 from config import load_config
 from models import DashboardData
 from models import WeatherDay as WeatherDayModel
-from sources.calendar import get_events, get_mini_cal_events
+from sources.calendar import get_events, get_events_per_calendar, get_mini_cal_events
 from sources.ms365 import get_ms365_events
 from sources.homeassistant import get_entities, get_garden_temps, get_outdoor_temp
 from sources.icloud import get_photo_url, get_photos
@@ -113,19 +117,69 @@ def create_app(config_path: str = "config.json") -> FastAPI:
                 consecutive_failures += 1
                 logger.exception("Background refresh failed for %s (failure %d)", key, consecutive_failures)
 
+    def _is_sleep_time() -> bool:
+        cfg = config.display.sleep_hours
+        if cfg is None:
+            return False
+        now = datetime.now(_PRAGUE).time().replace(second=0, microsecond=0)
+        start = time.fromisoformat(cfg.start)
+        end = time.fromisoformat(cfg.end)
+        if start <= end:
+            return start <= now < end
+        # overnight window (e.g. 21:00 – 06:15)
+        return now >= start or now < end
+
+    async def _display_sleep_loop() -> None:
+        display_on: bool | None = None  # unknown initial state
+        while True:
+            should_sleep = _is_sleep_time()
+            if should_sleep and display_on is not False:
+                try:
+                    subprocess.run(["vcgencmd", "display_power", "0"], check=True)
+                    display_on = False
+                    logger.info("Display turned off (sleep hours)")
+                except Exception:
+                    logger.exception("Failed to turn display off")
+            elif not should_sleep and display_on is not True:
+                try:
+                    subprocess.run(["vcgencmd", "display_power", "1"], check=True)
+                    display_on = True
+                    logger.info("Display turned on (sleep hours ended)")
+                except Exception:
+                    logger.exception("Failed to turn display on")
+            await asyncio.sleep(60)
+
     app.state.populate_cache = _populate_cache
 
     @app.on_event("startup")
     async def startup() -> None:
         async def _fetch_all_events():
-            ics, ms365 = await asyncio.gather(get_events(config), get_ms365_events(config), return_exceptions=True)
+            per_cal, window_start = await get_events_per_calendar(config)
             combined = []
-            if not isinstance(ics, BaseException):
-                combined.extend(ics)
-            if not isinstance(ms365, BaseException):
+            for i, (cal, result) in enumerate(zip(config.calendars, per_cal)):
+                key = f"ics_cal_{i}"
+                if isinstance(result, BaseException):
+                    logger.warning("Calendar '%s' fetch failed: %s", cal.name, result)
+                    combined.extend(cache.get(key, return_stale=True) or [])
+                else:
+                    cache.set(key, result, _TTLS["events"])
+                    combined.extend(result)
+
+            try:
+                ms365 = await get_ms365_events(config)
+                cache.set("ms365_cal", ms365, _TTLS["events"])
                 combined.extend(ms365)
-            combined.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
-            return combined
+            except Exception as exc:
+                logger.warning("MS365 calendar fetch failed: %s", exc)
+                combined.extend(cache.get("ms365_cal", return_stale=True) or [])
+
+            clamped = []
+            for ev in combined:
+                if ev.start < window_start < ev.end:
+                    ev = ev.model_copy(update={"start": window_start})
+                clamped.append(ev)
+            clamped.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
+            return clamped
 
         app.state.startup_task = asyncio.create_task(_populate_cache())
         asyncio.create_task(_refresh_loop("photos", lambda: get_photos(config), _TTLS["photos"]))
@@ -136,6 +190,8 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         asyncio.create_task(_refresh_loop("meals", lambda: get_strava_meals(config), _TTLS["meals"]))
         asyncio.create_task(_refresh_loop("outdoor_temp", lambda: get_outdoor_temp(config), _TTLS["outdoor_temp"]))
         asyncio.create_task(_refresh_loop("garden_temps", lambda: get_garden_temps(config), _TTLS["garden_temps"]))
+        if config.display.sleep_hours is not None:
+            asyncio.create_task(_display_sleep_loop())
 
     @app.get("/api/data", response_model=DashboardData)
     async def api_data() -> DashboardData:

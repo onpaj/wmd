@@ -29,7 +29,8 @@
   },
   "display": {
     "calendarDaysAhead": 2,
-    "weatherDays": 5
+    "weatherDays": 5,
+    "sleepHours": { "start": "21:00", "end": "06:15" }
   },
   "strava": {
     "email": "",

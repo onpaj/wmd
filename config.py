@@ -51,9 +51,16 @@ class MiniCalendarConfig:
 
 
 @dataclass
+class SleepHoursConfig:
+    start: str  # "HH:MM"
+    end: str    # "HH:MM"
+
+
+@dataclass
 class DisplayConfig:
     calendar_days_ahead: int
     weather_days: int
+    sleep_hours: Optional[SleepHoursConfig] = None
 
 
 @dataclass
@@ -141,9 +148,14 @@ def load_config(path: str = "config.json") -> AppConfig:
     )
 
     display_data = data["display"]
+    sleep_hours = None
+    if "sleepHours" in display_data:
+        sh = display_data["sleepHours"]
+        sleep_hours = SleepHoursConfig(start=sh["start"], end=sh["end"])
     display = DisplayConfig(
         calendar_days_ahead=display_data["calendarDaysAhead"],
         weather_days=display_data["weatherDays"],
+        sleep_hours=sleep_hours,
     )
 
     mini_cal_data = data.get("miniCalendar", {})

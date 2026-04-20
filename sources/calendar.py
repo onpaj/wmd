@@ -201,12 +201,9 @@ async def _fetch_calendar(
     window_start: datetime,
     window_end: datetime,
 ) -> list[CalendarEvent]:
-    try:
-        resp = await client.get(cal_cfg.url)
-        resp.raise_for_status()
-        return _parse_ics(resp.content, cal_cfg, window_start, window_end)
-    except Exception:
-        return []
+    resp = await client.get(cal_cfg.url)
+    resp.raise_for_status()
+    return _parse_ics(resp.content, cal_cfg, window_start, window_end)
 
 
 async def get_mini_cal_events(cfg: AppConfig) -> list[CalendarEvent]:
@@ -221,19 +218,25 @@ async def get_mini_cal_events(cfg: AppConfig) -> list[CalendarEvent]:
         return await _fetch_calendar(client, cal_cfg, window_start, window_end)
 
 
-async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
+async def get_events_per_calendar(cfg: AppConfig) -> tuple[list[list[CalendarEvent] | BaseException], datetime]:
+    """Fetch each ICS calendar individually. Returns per-calendar results (or exceptions) and the window start."""
     now = _now_utc()
     window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     window_end = window_start + timedelta(days=cfg.display.calendar_days_ahead + 1)
-
     async with httpx.AsyncClient(timeout=20.0) as client:
-        results = await asyncio.gather(
-            *[_fetch_calendar(client, cal, window_start, window_end) for cal in cfg.calendars]
-        )
+        results = list(await asyncio.gather(
+            *[_fetch_calendar(client, cal, window_start, window_end) for cal in cfg.calendars],
+            return_exceptions=True,
+        ))
+    return results, window_start
 
+
+async def get_events(cfg: AppConfig) -> list[CalendarEvent]:
+    results, window_start = await get_events_per_calendar(cfg)
     all_events: list[CalendarEvent] = []
-    for events in results:
-        all_events.extend(events)
+    for result in results:
+        if not isinstance(result, BaseException):
+            all_events.extend(result)
 
     # Clamp start to today for events that began before today but are still ongoing
     # (e.g. multi-day all-day events) so they appear under today, not a past date.

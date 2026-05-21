@@ -25,6 +25,13 @@ async def _post(client: httpx.AsyncClient, endpoint: str, body: dict) -> object:
         content=json.dumps(body),
         headers=_HEADERS,
     )
+    if resp.is_error:
+        logger.error(
+            "Strava API error %s for endpoint %r — body: %s",
+            resp.status_code,
+            endpoint,
+            resp.text,
+        )
     resp.raise_for_status()
     return resp.json()
 
@@ -34,6 +41,7 @@ async def _fetch_account_days(
     parent_sid: str,
     cislo: str,
     account_id: str,
+    s5_url: str,
 ) -> dict[date, tuple[str | None, str | None, bool]]:
     """Login to one canteen sub-account, fetch its order schedule.
     Returns {date: (soup, meal, ordered)}.
@@ -48,9 +56,9 @@ async def _fetch_account_days(
     if not isinstance(account_sid, str):
         raise ValueError(f"canteenLoginPA returned unexpected type {type(account_sid)!r}, expected str")
     # nactiVlastnostiPA is required to initialize the S5 server session
-    await _post(client, "nactiVlastnostiPA", {
+    vlastnosti = await _post(client, "nactiVlastnostiPA", {
         "sid": account_sid,
-        "url": _S5URL,
+        "url": s5_url,
         "cislo": cislo,
         "lang": "EN",
         "ignoreCert": False,
@@ -58,14 +66,20 @@ async def _fetch_account_days(
         "checkVersion": True,
         "frontendFunction": "loginCanteenUsingPA",
     })
+    # If the server returns a canonical S5 URL in the response, use it
+    if isinstance(vlastnosti, dict):
+        discovered = vlastnosti.get("url") or vlastnosti.get("s5url") or vlastnosti.get("wsUrl")
+        if discovered and isinstance(discovered, str) and discovered.startswith("http"):
+            logger.debug("nactiVlastnostiPA returned S5 URL: %s", discovered)
+            s5_url = discovered
     orders = await _post(client, "objednavky", {
         "cislo": cislo,
         "sid": account_sid,
-        "s5url": _S5URL,
+        "s5url": s5_url,
         "lang": "EN",
         "konto": 0,
         "podminka": "",
-        "ignoreCert": "false",
+        "ignoreCert": False,
     })
 
     if not isinstance(orders, dict):
@@ -121,10 +135,11 @@ async def get_strava_meals(cfg: AppConfig, _today: date | None = None) -> Strava
         if not isinstance(login_data, dict) or "SID" not in login_data:
             raise ValueError(f"loginPA returned unexpected response: {login_data!r}")
         parent_sid: str = login_data["SID"]
+        effective_s5_url = s.s5_url or _S5URL
 
         async def _one(account_id: str) -> tuple[str, dict[date, tuple] | None]:
             try:
-                days = await _fetch_account_days(client, parent_sid, s.canteen_number, account_id)
+                days = await _fetch_account_days(client, parent_sid, s.canteen_number, account_id, effective_s5_url)
                 return account_id, days
             except Exception:
                 logger.exception("Strava fetch failed for account %s", account_id)

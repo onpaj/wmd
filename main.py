@@ -1,5 +1,7 @@
 import asyncio
+import glob
 import logging
+import os
 import subprocess
 from datetime import datetime, time, timezone
 from zoneinfo import ZoneInfo
@@ -42,6 +44,31 @@ def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
     if consecutive_failures == 0:
         return ttl
     return min(10 * (2 ** (consecutive_failures - 1)), ttl)
+
+
+def _wayland_env() -> dict[str, str] | None:
+    runtime_dir = f"/run/user/{os.getuid()}"
+    sockets = [
+        s for s in sorted(glob.glob(f"{runtime_dir}/wayland-*"))
+        if not s.endswith(".lock")
+    ]
+    if not sockets:
+        return None
+    return {
+        **os.environ,
+        "XDG_RUNTIME_DIR": runtime_dir,
+        "WAYLAND_DISPLAY": os.path.basename(sockets[0]),
+    }
+
+
+def _primary_output_name(env: dict[str, str]) -> str | None:
+    result = subprocess.run(
+        ["wlr-randr"], env=env, capture_output=True, text=True, timeout=5,
+    )
+    if result.returncode != 0:
+        return None
+    first_line = result.stdout.splitlines()[0] if result.stdout else ""
+    return first_line.split()[0] if first_line else None
 
 
 def create_app(config_path: str = "config.json") -> FastAPI:
@@ -130,23 +157,26 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         return now >= start or now < end
 
     async def _display_sleep_loop() -> None:
-        display_on: bool | None = None  # unknown initial state
         while True:
             should_sleep = _is_sleep_time()
-            if should_sleep and display_on is not False:
-                try:
-                    subprocess.run(["vcgencmd", "display_power", "0"], check=True)
-                    display_on = False
-                    logger.info("Display turned off (sleep hours)")
-                except Exception:
-                    logger.exception("Failed to turn display off")
-            elif not should_sleep and display_on is not True:
-                try:
-                    subprocess.run(["vcgencmd", "display_power", "1"], check=True)
-                    display_on = True
-                    logger.info("Display turned on (sleep hours ended)")
-                except Exception:
-                    logger.exception("Failed to turn display on")
+            env = _wayland_env()
+            if env is None:
+                logger.warning("Display sleep: no Wayland socket found; user session not active yet")
+            else:
+                output = _primary_output_name(env)
+                if output is None:
+                    logger.warning("Display sleep: could not detect Wayland output")
+                else:
+                    state = "--off" if should_sleep else "--on"
+                    try:
+                        subprocess.run(
+                            ["wlr-randr", "--output", output, state],
+                            env=env, check=True, capture_output=True, timeout=5,
+                        )
+                    except subprocess.CalledProcessError as exc:
+                        logger.warning("wlr-randr %s failed: %s", state, exc.stderr.decode(errors="replace"))
+                    except Exception:
+                        logger.exception("Failed to toggle display via wlr-randr")
             await asyncio.sleep(60)
 
     app.state.populate_cache = _populate_cache

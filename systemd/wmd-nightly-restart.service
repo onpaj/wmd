@@ -1,0 +1,8 @@
+[Unit]
+Description=WMD Nightly Restart
+After=wmd-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart wmd-server
+ExecStartPost=/bin/bash -c 'pkill -f "chromium.*kiosk" || true'

@@ -1,0 +1,10 @@
+[Unit]
+Description=WMD Nightly Restart Timer
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=wmd-nightly-restart.service
+
+[Install]
+WantedBy=timers.target

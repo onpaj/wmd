@@ -108,6 +108,35 @@ else:
         f.write(FRESH_XML)
 print("labwc rc.xml updated")
 PYEOF
+
+  echo "→ Installing nightly restart timer..."
+  sudo tee /etc/systemd/system/wmd-nightly-restart.service > /dev/null << 'SVCEOF'
+[Unit]
+Description=WMD Nightly Restart
+After=wmd-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart wmd-server
+ExecStartPost=/bin/bash -c 'pkill -f "chromium.*kiosk" || true'
+SVCEOF
+
+  sudo tee /etc/systemd/system/wmd-nightly-restart.timer > /dev/null << 'TMREOF'
+[Unit]
+Description=WMD Nightly Restart Timer
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=wmd-nightly-restart.service
+
+[Install]
+WantedBy=timers.target
+TMREOF
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now wmd-nightly-restart.timer
+  echo "✓ Nightly restart timer enabled (03:00 daily)"
 fi
 
 # ── FRONTEND: rebuild JS bundle ──────────────────────────────────────────────

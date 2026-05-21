@@ -238,6 +238,35 @@ sudo systemctl daemon-reload
 sudo systemctl enable wmd-server
 info "Services enabled."
 
+# Generate wmd-nightly-restart.service + timer (daily 03:00 restart)
+sudo tee /etc/systemd/system/wmd-nightly-restart.service > /dev/null << 'EOF'
+[Unit]
+Description=WMD Nightly Restart
+After=wmd-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart wmd-server
+ExecStartPost=/bin/bash -c 'pkill -f "chromium.*kiosk" || true'
+EOF
+
+sudo tee /etc/systemd/system/wmd-nightly-restart.timer > /dev/null << 'EOF'
+[Unit]
+Description=WMD Nightly Restart Timer
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=wmd-nightly-restart.service
+
+[Install]
+WantedBy=timers.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now wmd-nightly-restart.timer
+info "Nightly restart timer enabled (03:00 daily)."
+
 # ── 9. Start services ─────────────────────────────────────────────────────────
 info "Starting wmd-server..."
 sudo systemctl restart wmd-server

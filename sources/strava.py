@@ -89,12 +89,17 @@ async def _fetch_account_days(
         "frontendFunction": "loginCanteenUsingPA",
     })
     logger.warning("nactiVlastnostiPA response for %s: %s", account_id, vlastnosti)
-    # If the server returns a canonical S5 URL in the response, use it
+    # newUrl from nactiVlastnostiPA is the session token/hash the gateway expects as s5url
     if isinstance(vlastnosti, dict):
-        discovered = vlastnosti.get("url") or vlastnosti.get("s5url") or vlastnosti.get("wsUrl")
-        if discovered and isinstance(discovered, str) and discovered.startswith("http"):
-            logger.warning("nactiVlastnostiPA returned S5 URL for %s: %s", account_id, discovered)
-            s5_url = discovered
+        new_url = vlastnosti.get("newUrl")
+        if new_url and isinstance(new_url, str):
+            logger.warning("nactiVlastnostiPA returned newUrl for %s: %s", account_id, new_url)
+            s5_url = new_url
+        else:
+            discovered = vlastnosti.get("url") or vlastnosti.get("s5url") or vlastnosti.get("wsUrl")
+            if discovered and isinstance(discovered, str) and discovered.startswith("http"):
+                logger.warning("nactiVlastnostiPA returned S5 URL for %s: %s", account_id, discovered)
+                s5_url = discovered
     orders = await _post(client, "objednavky", {
         "cislo": cislo,
         "sid": account_sid,

@@ -266,8 +266,39 @@ async def test_configurable_s5_url_skips_s4polozky():
 
 
 @respx.mock
-async def test_s5_url_discovered_from_nacti_vlastnosti_response():
-    """If nactiVlastnostiPA returns a URL in its response, objednavky uses that URL."""
+async def test_new_url_token_from_nacti_vlastnosti_used_as_s5url():
+    """nactiVlastnostiPA returns newUrl (session token/hash); objednavky uses it as s5url."""
+    today = date(2026, 4, 9)
+    new_url_token = "48c7fb67bdfbb7e48e7c56d38b4d8ffc2fef849c5bfdfd65ccb0b2d28653d9a9"
+
+    respx.post("https://app.strava.cz/api/loginPA").mock(
+        return_value=httpx.Response(200, json={"SID": "parent-sid"})
+    )
+    _mock_s4polozky()
+    respx.post("https://app.strava.cz/api/canteenLoginPA").mock(
+        return_value=httpx.Response(200, text='"alice-sid"')
+    )
+    respx.post("https://app.strava.cz/api/nactiVlastnostiPA").mock(
+        return_value=httpx.Response(200, json={"newUrl": new_url_token, "konto": "100.00"})
+    )
+
+    objednavky_requests: list[dict] = []
+
+    def objednavky_side_effect(request: httpx.Request) -> httpx.Response:
+        objednavky_requests.append(json.loads(request.content))
+        return httpx.Response(200, json=_make_orders("09.04.2026", "10.04.2026", True, False))
+
+    respx.post("https://app.strava.cz/api/objednavky").mock(side_effect=objednavky_side_effect)
+
+    cfg = make_cfg([StravaPersonConfig(name="Alice", accounts=["alice.test"])])
+    await get_strava_meals(cfg, _today=today)
+
+    assert objednavky_requests[0]["s5url"] == new_url_token
+
+
+@respx.mock
+async def test_s5_url_discovered_from_nacti_vlastnosti_response_fallback():
+    """If nactiVlastnostiPA returns a URL (not newUrl) in its response, objednavky uses it."""
     today = date(2026, 4, 9)
     s4polozky_url = "https://wss53.strava.cz/WSStravne5_3/WSStravne5.svc"
     nacti_discovered_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"

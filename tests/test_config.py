@@ -100,3 +100,47 @@ def test_load_config_strava_breaking_time_defaults_to_1230(tmp_path):
 
     assert cfg.strava.breaking_time == "12:30"
     assert cfg.strava.canteen_number == "1019"
+
+
+def test_load_config_strava_s5_url_parsed(tmp_path):
+    custom_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"
+    data = {
+        "icloud": {"shareToken": "t", "photoIntervalSeconds": 30},
+        "calendars": [],
+        "weather": {"provider": "openmeteo", "latitude": 50.0, "longitude": 14.0},
+        "homeAssistant": {"url": "http://ha.local", "token": "tok", "entities": []},
+        "display": {"calendarDaysAhead": 2, "weatherDays": 5},
+        "strava": {
+            "email": "t@e.com",
+            "password": "p",
+            "s5Url": custom_url,
+            "people": [],
+        },
+    }
+    config_file = tmp_path / "config.json"
+    config_file.write_text(json.dumps(data))
+
+    cfg = load_config(str(config_file))
+
+    assert cfg.strava.s5_url == custom_url
+
+
+def test_load_config_strava_s5_url_defaults_to_none(tmp_path):
+    data = {
+        "icloud": {"shareToken": "t", "photoIntervalSeconds": 30},
+        "calendars": [],
+        "weather": {"provider": "openmeteo", "latitude": 50.0, "longitude": 14.0},
+        "homeAssistant": {"url": "http://ha.local", "token": "tok", "entities": []},
+        "display": {"calendarDaysAhead": 2, "weatherDays": 5},
+        "strava": {
+            "email": "t@e.com",
+            "password": "p",
+            "people": [],
+        },
+    }
+    config_file = tmp_path / "config.json"
+    config_file.write_text(json.dumps(data))
+
+    cfg = load_config(str(config_file))
+
+    assert cfg.strava.s5_url is None

@@ -91,6 +91,7 @@ class StravaConfig:
     password: str
     canteen_number: str = "1019"
     breaking_time: str = "12:30"
+    s5_url: Optional[str] = None
     people: list[StravaPersonConfig] = field(default_factory=list)
 
 
@@ -182,6 +183,7 @@ def load_config(path: str = "config.json") -> AppConfig:
             password=s["password"],
             canteen_number=s.get("canteenNumber", "1019"),
             breaking_time=s.get("breakingTime", "12:30"),
+            s5_url=s.get("s5Url"),
             people=[
                 StravaPersonConfig(
                     name=p["name"],

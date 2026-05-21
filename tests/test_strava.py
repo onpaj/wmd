@@ -29,6 +29,15 @@ def make_cfg(people: list[StravaPersonConfig]) -> AppConfig:
     )
 
 
+_DEFAULT_S5URL = "https://wss53.strava.cz/WSStravne5_3/WSStravne5.svc"
+
+
+def _mock_s4polozky(s5_url: str = _DEFAULT_S5URL) -> None:
+    respx.post("https://app.strava.cz/api/s4Polozky").mock(
+        return_value=httpx.Response(200, json={"urlwsdl_s-url": [s5_url]})
+    )
+
+
 def _make_orders(today_str: str, tomorrow_str: str, today_ordered: bool, tomorrow_ordered: bool) -> dict:
     """Build a minimal objednavky response with two days."""
     return {
@@ -53,6 +62,7 @@ async def test_happy_path_single_account():
     respx.post("https://app.strava.cz/api/loginPA").mock(
         return_value=httpx.Response(200, json={"SID": "parent-sid"})
     )
+    _mock_s4polozky()
     respx.post("https://app.strava.cz/api/canteenLoginPA").mock(
         return_value=httpx.Response(200, text='"alice-account-sid"')
     )
@@ -94,6 +104,7 @@ async def test_or_aggregation_for_person_with_two_accounts():
     respx.post("https://app.strava.cz/api/loginPA").mock(
         return_value=httpx.Response(200, json={"SID": "parent-sid"})
     )
+    _mock_s4polozky()
 
     def canteen_login_response(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
@@ -131,6 +142,7 @@ async def test_one_account_fetch_failure_shows_unknown():
     respx.post("https://app.strava.cz/api/loginPA").mock(
         return_value=httpx.Response(200, json={"SID": "parent-sid"})
     )
+    _mock_s4polozky()
 
     def canteen_login_response(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
@@ -187,14 +199,15 @@ async def test_returns_none_when_people_list_is_empty():
 
 
 @respx.mock
-async def test_configurable_s5_url_forwarded_to_api():
-    """Custom s5Url from config is sent to nactiVlastnostiPA and objednavky."""
+async def test_s4polozky_url_used_for_nacti_and_objednavky():
+    """s4Polozky-discovered URL is forwarded to nactiVlastnostiPA and objednavky."""
     today = date(2026, 4, 9)
-    custom_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"
+    discovered_url = "https://wss53.strava.cz/WSStravne5_3/WSStravne5.svc"
 
     respx.post("https://app.strava.cz/api/loginPA").mock(
         return_value=httpx.Response(200, json={"SID": "parent-sid"})
     )
+    _mock_s4polozky(discovered_url)
     respx.post("https://app.strava.cz/api/canteenLoginPA").mock(
         return_value=httpx.Response(200, text='"alice-sid"')
     )
@@ -214,10 +227,41 @@ async def test_configurable_s5_url_forwarded_to_api():
     respx.post("https://app.strava.cz/api/objednavky").mock(side_effect=objednavky_side_effect)
 
     cfg = make_cfg([StravaPersonConfig(name="Alice", accounts=["alice.test"])])
+    await get_strava_meals(cfg, _today=today)
+
+    assert nacti_requests[0]["url"] == discovered_url
+    assert objednavky_requests[0]["s5url"] == discovered_url
+
+
+@respx.mock
+async def test_configurable_s5_url_skips_s4polozky():
+    """When s5_url is set in config, s4Polozky is not called and the config URL is used."""
+    today = date(2026, 4, 9)
+    custom_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"
+
+    respx.post("https://app.strava.cz/api/loginPA").mock(
+        return_value=httpx.Response(200, json={"SID": "parent-sid"})
+    )
+    # s4Polozky is NOT mocked — calling it would raise an error, proving it's skipped
+    respx.post("https://app.strava.cz/api/canteenLoginPA").mock(
+        return_value=httpx.Response(200, text='"alice-sid"')
+    )
+
+    objednavky_requests: list[dict] = []
+
+    def objednavky_side_effect(request: httpx.Request) -> httpx.Response:
+        objednavky_requests.append(json.loads(request.content))
+        return httpx.Response(200, json=_make_orders("09.04.2026", "10.04.2026", True, False))
+
+    respx.post("https://app.strava.cz/api/nactiVlastnostiPA").mock(
+        return_value=httpx.Response(200, json={})
+    )
+    respx.post("https://app.strava.cz/api/objednavky").mock(side_effect=objednavky_side_effect)
+
+    cfg = make_cfg([StravaPersonConfig(name="Alice", accounts=["alice.test"])])
     cfg.strava.s5_url = custom_url
     await get_strava_meals(cfg, _today=today)
 
-    assert nacti_requests[0]["url"] == custom_url
     assert objednavky_requests[0]["s5url"] == custom_url
 
 
@@ -225,16 +269,18 @@ async def test_configurable_s5_url_forwarded_to_api():
 async def test_s5_url_discovered_from_nacti_vlastnosti_response():
     """If nactiVlastnostiPA returns a URL in its response, objednavky uses that URL."""
     today = date(2026, 4, 9)
-    discovered_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"
+    s4polozky_url = "https://wss53.strava.cz/WSStravne5_3/WSStravne5.svc"
+    nacti_discovered_url = "https://wss53.strava.cz/WSStravne5_14/WSStravne5.svc"
 
     respx.post("https://app.strava.cz/api/loginPA").mock(
         return_value=httpx.Response(200, json={"SID": "parent-sid"})
     )
+    _mock_s4polozky(s4polozky_url)
     respx.post("https://app.strava.cz/api/canteenLoginPA").mock(
         return_value=httpx.Response(200, text='"alice-sid"')
     )
     respx.post("https://app.strava.cz/api/nactiVlastnostiPA").mock(
-        return_value=httpx.Response(200, json={"url": discovered_url})
+        return_value=httpx.Response(200, json={"url": nacti_discovered_url})
     )
 
     objednavky_requests: list[dict] = []
@@ -248,4 +294,4 @@ async def test_s5_url_discovered_from_nacti_vlastnosti_response():
     cfg = make_cfg([StravaPersonConfig(name="Alice", accounts=["alice.test"])])
     await get_strava_meals(cfg, _today=today)
 
-    assert objednavky_requests[0]["s5url"] == discovered_url
+    assert objednavky_requests[0]["s5url"] == nacti_discovered_url

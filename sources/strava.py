@@ -11,7 +11,7 @@ from models import StravaDay, StravaMeals, StravaPersonStatus
 logger = logging.getLogger(__name__)
 
 _BASE = "https://app.strava.cz/api"
-_S5URL = "https://wss52.strava.cz/WSStravne5_12/WSStravne5.svc"
+_S5URL = "https://wss53.strava.cz/WSStravne5_3/WSStravne5.svc"
 _HEADERS = {
     "Content-Type": "text/plain;charset=UTF-8",
     "User-Agent": "Mozilla/5.0",
@@ -34,6 +34,28 @@ async def _post(client: httpx.AsyncClient, endpoint: str, body: dict) -> object:
         )
     resp.raise_for_status()
     return resp.json()
+
+
+async def _discover_s5_url(client: httpx.AsyncClient, cislo: str) -> str | None:
+    """Call s4Polozky to discover the canteen's current WSS URL.
+
+    The web app always calls this before fetching orders. Without it, the
+    hardcoded URL may be stale when Strava migrates canteens to new servers.
+    """
+    try:
+        polozky = await _post(client, "s4Polozky", {
+            "cislo": cislo,
+            "lang": "EN",
+            "polozky": "URLWSDL_S-URL",
+        })
+        if isinstance(polozky, dict):
+            urls = polozky.get("urlwsdl_s-url")
+            if urls and isinstance(urls, list) and urls and isinstance(urls[0], str) and urls[0].startswith("http"):
+                logger.info("Discovered S5 URL for canteen %s: %s", cislo, urls[0])
+                return urls[0]
+    except Exception:
+        logger.warning("s4Polozky failed for canteen %s, falling back to default S5 URL", cislo)
+    return None
 
 
 async def _fetch_account_days(
@@ -135,7 +157,11 @@ async def get_strava_meals(cfg: AppConfig, _today: date | None = None) -> Strava
         if not isinstance(login_data, dict) or "SID" not in login_data:
             raise ValueError(f"loginPA returned unexpected response: {login_data!r}")
         parent_sid: str = login_data["SID"]
-        effective_s5_url = s.s5_url or _S5URL
+        # s4Polozky returns the canteen's current WSS URL — use it unless overridden in config
+        if s.s5_url:
+            effective_s5_url = s.s5_url
+        else:
+            effective_s5_url = await _discover_s5_url(client, s.canteen_number) or _S5URL
 
         async def _one(account_id: str) -> tuple[str, dict[date, tuple] | None]:
             try:

@@ -11,7 +11,7 @@ from models import StravaDay, StravaMeals, StravaPersonStatus
 logger = logging.getLogger(__name__)
 
 _BASE = "https://app.strava.cz/api"
-_S5URL = "https://wss52.strava.cz/WSStravne5_13/WSStravne5.svc"
+_S5URL = "https://wss52.strava.cz/WSStravne5_12/WSStravne5.svc"
 _HEADERS = {
     "Content-Type": "text/plain;charset=UTF-8",
     "User-Agent": "Mozilla/5.0",

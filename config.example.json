@@ -37,7 +37,7 @@
     "password": "",
     "canteenNumber": "1019",
     "breakingTime": "12:30",
-    "s5Url": "https://wss52.strava.cz/WSStravne5_13/WSStravne5.svc",
+    "s5Url": "https://wss52.strava.cz/WSStravne5_12/WSStravne5.svc",
     "people": [
       {"name": "Child", "color": "#4CAF50", "accounts": ["child.strava.login"]}
     ]

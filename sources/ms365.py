@@ -12,13 +12,18 @@ def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _parse_graph_datetime(dt_str: str) -> datetime:
-    # Strip sub-second precision beyond microseconds then parse as UTC
+def _parse_graph_datetime(dt_str: str, tz_str: str = "UTC") -> datetime:
+    from zoneinfo import ZoneInfo
     dot = dt_str.find(".")
     if dot != -1:
         dt_str = dt_str[:dot + 7]  # keep up to 6 fractional digits
-        return datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=timezone.utc)
-    return datetime.strptime(dt_str[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        naive = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f")
+    else:
+        naive = datetime.strptime(dt_str[:19], "%Y-%m-%dT%H:%M:%S")
+
+    if tz_str.upper() == "UTC":
+        return naive.replace(tzinfo=timezone.utc)
+    return naive.replace(tzinfo=ZoneInfo(tz_str)).astimezone(timezone.utc)
 
 
 async def _get_token(client: httpx.AsyncClient, tenant_id: str, client_id: str, client_secret: str) -> str:
@@ -60,8 +65,8 @@ async def _fetch_user_events(
         resp.raise_for_status()
         events = []
         for item in resp.json().get("value", []):
-            start = _parse_graph_datetime(item["start"]["dateTime"])
-            end = _parse_graph_datetime(item["end"]["dateTime"])
+            start = _parse_graph_datetime(item["start"]["dateTime"], item["start"].get("timeZone", "UTC"))
+            end = _parse_graph_datetime(item["end"]["dateTime"], item["end"].get("timeZone", "UTC"))
             event_id = hashlib.md5(f"{email}-{item['id']}".encode()).hexdigest()
             events.append(CalendarEvent(
                 id=event_id,

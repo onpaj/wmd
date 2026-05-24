@@ -156,6 +156,28 @@ async def test_returns_empty_on_auth_failure():
 
 
 @respx.mock
+async def test_event_with_prague_timezone_is_converted_to_utc():
+    from sources.ms365 import get_ms365_events
+    respx.post(TOKEN_URL).mock(return_value=_token_mock())
+    # 10:00 Prague CEST (UTC+2) should become 08:00 UTC
+    event = {
+        "id": "e1",
+        "subject": "Prague Meeting",
+        "start": {"dateTime": "2026-05-24T10:00:00.0000000", "timeZone": "Europe/Prague"},
+        "end":   {"dateTime": "2026-05-24T11:00:00.0000000", "timeZone": "Europe/Prague"},
+        "isAllDay": False,
+    }
+    respx.get(GRAPH_CAL).mock(return_value=_events_mock([event]))
+
+    fixed_now = datetime(2026, 5, 24, 0, 0, 0, tzinfo=timezone.utc)
+    with mock.patch("sources.ms365._now_utc", return_value=fixed_now):
+        events = await get_ms365_events(make_config())
+
+    assert len(events) == 1
+    assert events[0].start == datetime(2026, 5, 24, 8, 0, 0, tzinfo=timezone.utc)
+
+
+@respx.mock
 async def test_returns_empty_on_graph_failure():
     from sources.ms365 import get_ms365_events
     respx.post(TOKEN_URL).mock(return_value=_token_mock())

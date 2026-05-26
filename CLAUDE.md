@@ -165,6 +165,8 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
 
 All top-level keys except `icloud`, `calendars`, `weather`, `homeAssistant`, and `display` are optional.
 
+`display.sleepHours` (optional) puts the TV into HDMI-CEC standby during the window and brings it back at the end (with `wlr-randr --off/--on` as a best-effort fallback for the compositor output). Requires `cec-utils` installed and the service user in the `video` group — both handled by `./update.sh system`.
+
 ## Deploy Routine
 
 After every commit, always run:

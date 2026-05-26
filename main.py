@@ -24,7 +24,13 @@ from sources.icloud import get_photo_url, get_photos
 from sources.strava import get_strava_meals
 from sources.weather import get_forecast
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+_REASSERT_INTERVAL_SECONDS: int = 600  # re-issue commands every 10 min as a safety net
+_LOOP_TICK_SECONDS: int = 60
+_CEC_TIMEOUT_SECONDS: float = 8.0
+_WLR_TIMEOUT_SECONDS: float = 5.0
 
 _TTLS = {
     "photos": 3600,
@@ -69,6 +75,57 @@ def _primary_output_name(env: dict[str, str]) -> str | None:
         return None
     first_line = result.stdout.splitlines()[0] if result.stdout else ""
     return first_line.split()[0] if first_line else None
+
+
+def _cec_set_power(sleep: bool) -> str:
+    # cec-client reads commands from stdin. "standby 0" / "on 0" target the TV (logical address 0).
+    stdin_bytes = b"standby 0\n" if sleep else b"on 0\n"
+    try:
+        result = subprocess.run(
+            ["cec-client", "-s", "-d", "1"],
+            input=stdin_bytes,
+            capture_output=True,
+            timeout=_CEC_TIMEOUT_SECONDS,
+        )
+    except FileNotFoundError:
+        return "missing"
+    except subprocess.TimeoutExpired:
+        return "timeout"
+    except Exception as exc:
+        logger.warning("cec-client failed: %s", exc)
+        return "error"
+    if result.returncode != 0:
+        logger.warning(
+            "cec-client returned %d: %s",
+            result.returncode,
+            result.stderr.decode(errors="replace").strip(),
+        )
+        return "error"
+    return "ok"
+
+
+def _wlr_set_power(sleep: bool) -> str:
+    env = _wayland_env()
+    if env is None:
+        return "no-wayland"
+    output = _primary_output_name(env)
+    if output is None:
+        return "no-output"
+    state = "--off" if sleep else "--on"
+    try:
+        subprocess.run(
+            ["wlr-randr", "--output", output, state],
+            env=env, check=True, capture_output=True, timeout=_WLR_TIMEOUT_SECONDS,
+        )
+    except FileNotFoundError:
+        return "missing"
+    except subprocess.CalledProcessError as exc:
+        logger.warning("wlr-randr %s failed: %s", state, exc.stderr.decode(errors="replace").strip())
+        return "error"
+    except Exception as exc:
+        logger.warning("wlr-randr %s raised: %s", state, exc)
+        return "error"
+    return "ok"
 
 
 def create_app(config_path: str = "config.json") -> FastAPI:
@@ -157,27 +214,25 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         return now >= start or now < end
 
     async def _display_sleep_loop() -> None:
+        last_state: bool | None = None
+        last_applied_at: float = 0.0
+        loop = asyncio.get_running_loop()
         while True:
             should_sleep = _is_sleep_time()
-            env = _wayland_env()
-            if env is None:
-                logger.warning("Display sleep: no Wayland socket found; user session not active yet")
-            else:
-                output = _primary_output_name(env)
-                if output is None:
-                    logger.warning("Display sleep: could not detect Wayland output")
-                else:
-                    state = "--off" if should_sleep else "--on"
-                    try:
-                        subprocess.run(
-                            ["wlr-randr", "--output", output, state],
-                            env=env, check=True, capture_output=True, timeout=5,
-                        )
-                    except subprocess.CalledProcessError as exc:
-                        logger.warning("wlr-randr %s failed: %s", state, exc.stderr.decode(errors="replace"))
-                    except Exception:
-                        logger.exception("Failed to toggle display via wlr-randr")
-            await asyncio.sleep(60)
+            now = loop.time()
+            transition = should_sleep != last_state
+            reassert = (now - last_applied_at) >= _REASSERT_INTERVAL_SECONDS
+            if transition or reassert:
+                cec_result = await asyncio.to_thread(_cec_set_power, should_sleep)
+                wlr_result = await asyncio.to_thread(_wlr_set_power, should_sleep)
+                logger.info(
+                    "display sleep=%s cec=%s wlr=%s (transition=%s reassert=%s)",
+                    "ON" if should_sleep else "OFF",
+                    cec_result, wlr_result, transition, reassert,
+                )
+                last_state = should_sleep
+                last_applied_at = now
+            await asyncio.sleep(_LOOP_TICK_SECONDS)
 
     app.state.populate_cache = _populate_cache
 

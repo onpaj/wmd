@@ -54,8 +54,12 @@ sudo apt-get install -y \
   nodejs npm \
   chromium \
   labwc wlr-randr \
+  cec-utils \
   fonts-noto fonts-noto-color-emoji \
   git curl
+
+# HDMI-CEC access (/dev/cec0) is gated by the `video` group on Raspberry Pi OS.
+sudo usermod -aG video "$WMD_USER"
 
 command -v chromium &>/dev/null || error "chromium not found after install. Run: sudo apt-get install chromium"
 info "Chromium binary: $(command -v chromium)"

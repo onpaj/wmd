@@ -44,6 +44,10 @@ git reset --hard origin/master
 if [ "$LEVEL" = "system" ]; then
   echo "→ Installing system packages..."
   sudo apt-get install -y fonts-noto fonts-noto-color-emoji fonts-roboto || true
+  sudo apt-get install -y cec-utils
+
+  # HDMI-CEC access (/dev/cec0) requires `video` group membership. Idempotent.
+  sudo usermod -aG video "$USER"
 
   echo "→ Installing npm dependencies..."
   npm ci

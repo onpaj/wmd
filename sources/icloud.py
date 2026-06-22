@@ -71,8 +71,9 @@ async def get_photos(cfg: AppConfig) -> list[Photo]:
         real_url = f"https://{url_location}{url_path}" if url_location and url_path else ""
         if not real_url:
             continue
+        photo_date = p.get("dateCreated") or p.get("batchDateCreated")
         _photo_url_map[guid] = real_url
-        photos.append(Photo(id=guid, url=f"/api/photo/{guid}"))
+        photos.append(Photo(id=guid, url=f"/api/photo/{guid}", date=photo_date))
 
     return photos
 

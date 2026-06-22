@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class Photo(BaseModel):
     id: str
     url: str
+    date: str | None = None   # ISO timestamp from iCloud, e.g. "2021-06-12T18:13:54Z"
 
 
 class CalendarEvent(BaseModel):

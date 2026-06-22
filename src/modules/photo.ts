@@ -14,7 +14,18 @@ function shuffle(arr: Photo[]): Photo[] {
   return a;
 }
 
-function swapActive(imgA: HTMLImageElement, imgB: HTMLImageElement): void {
+function formatPhotoDate(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('cs-CZ', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  }).format(d);
+}
+
+function swapActive(imgA: HTMLImageElement, imgB: HTMLImageElement, dateEl: HTMLElement): void {
   const aIsActive = imgA.classList.contains('photo-img--active');
   const inactive = aIsActive ? imgB : imgA;
   const active = aIsActive ? imgA : imgB;
@@ -25,6 +36,7 @@ function swapActive(imgA: HTMLImageElement, imgB: HTMLImageElement): void {
   inactive.onload = () => {
     active.classList.remove('photo-img--active');
     inactive.classList.add('photo-img--active');
+    dateEl.textContent = formatPhotoDate(next.date);
   };
   inactive.src = next.url;
 }
@@ -34,6 +46,7 @@ export function render(data: Photo[], container: HTMLElement, photoIntervalSecon
 
   const imgA = container.querySelector<HTMLImageElement>('#photo-a')!;
   const imgB = container.querySelector<HTMLImageElement>('#photo-b')!;
+  const dateEl = container.querySelector<HTMLElement>('#photo-date')!;
   imgA.classList.add('photo-img');
   imgB.classList.add('photo-img');
 
@@ -49,12 +62,13 @@ export function render(data: Photo[], container: HTMLElement, photoIntervalSecon
     imgA.src = _photos[0].url;
     imgA.classList.add('photo-img--active');
     imgB.classList.remove('photo-img--active');
+    dateEl.textContent = formatPhotoDate(_photos[0].date);
     _index = 1;
   }
 
   if (photoIntervalSeconds !== _currentIntervalSeconds) {
     if (_interval !== null) clearInterval(_interval);
     _currentIntervalSeconds = photoIntervalSeconds;
-    _interval = setInterval(() => swapActive(imgA, imgB), photoIntervalSeconds * 1000);
+    _interval = setInterval(() => swapActive(imgA, imgB, dateEl), photoIntervalSeconds * 1000);
   }
 }

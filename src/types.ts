@@ -1,6 +1,7 @@
 export interface Photo {
   id: string;
   url: string;
+  date?: string;
 }
 
 export interface CalendarEvent {

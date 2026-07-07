@@ -11,6 +11,40 @@ function toDateKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+// Longest span (in days) we will expand a single event across, guarding against
+// malformed feeds with runaway or reversed date ranges.
+const MAX_EVENT_SPAN_DAYS = 366;
+
+// Returns the local date key for every day an event covers, so multi-day events
+// (e.g. an "apartmán" booking) appear on each day, not only their start.
+//
+// iCal all-day events use an EXCLUSIVE end date — DTEND is the day *after* the
+// last day — whereas timed events end at an inclusive moment in time.
+export function eventDayKeys(ev: CalendarEvent): string[] {
+  const start = new Date(ev.start);
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+  const end = new Date(ev.end);
+  const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  if (ev.all_day) {
+    lastDay.setDate(lastDay.getDate() - 1);
+  }
+
+  // Zero-length or reversed span (e.g. a single all-day event, or a missing
+  // DTEND where end === start) collapses to just the start day.
+  if (lastDay < startDay) {
+    return [toDateKey(startDay)];
+  }
+
+  const keys: string[] = [];
+  const cursor = new Date(startDay);
+  for (let i = 0; i < MAX_EVENT_SPAN_DAYS && cursor <= lastDay; i++) {
+    keys.push(toDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
 export function render(events: CalendarEvent[], container: HTMLElement): void {
   container.innerHTML = '';
 
@@ -22,13 +56,14 @@ export function render(events: CalendarEvent[], container: HTMLElement): void {
   weekStart.setDate(today.getDate() - mondayFirst(today.getDay()));
   weekStart.setHours(0, 0, 0, 0);
 
-  // Build map: dateKey → list of {color, title}
+  // Build map: dateKey → list of {color, title}. Multi-day events are added to
+  // every day they span so bookings show across their whole range.
   const eventMap = new Map<string, Array<{ color: string; title: string }>>();
   for (const ev of events) {
-    const d = new Date(ev.start);
-    const key = toDateKey(d);
-    if (!eventMap.has(key)) eventMap.set(key, []);
-    eventMap.get(key)!.push({ color: ev.color, title: ev.title });
+    for (const key of eventDayKeys(ev)) {
+      if (!eventMap.has(key)) eventMap.set(key, []);
+      eventMap.get(key)!.push({ color: ev.color, title: ev.title });
+    }
   }
 
   // Header row

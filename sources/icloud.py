@@ -7,12 +7,19 @@ _photo_url_map: dict[str, str] = {}
 
 _BASE_URL = "https://p01-sharedstreams.icloud.com/{token}/sharedstreams"
 
+# Apple's `webstream` enumeration for large shared albums can take ~50s to
+# generate its multi-MB response, so the read timeout must be generous. Connect
+# stays short so an unreachable host fails fast instead of stalling the fetch.
+_CONNECT_TIMEOUT_SECONDS = 10.0
+_READ_TIMEOUT_SECONDS = 90.0
+_TIMEOUT = httpx.Timeout(_READ_TIMEOUT_SECONDS, connect=_CONNECT_TIMEOUT_SECONDS)
+
 
 async def get_photos(cfg: AppConfig) -> list[Photo]:
     token = cfg.icloud.share_token
     base_url = _BASE_URL.format(token=token)
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
+    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
         # Step 1: get stream
         resp = await client.post(
             f"{base_url}/webstream",

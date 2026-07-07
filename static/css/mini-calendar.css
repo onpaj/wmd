@@ -5,8 +5,7 @@
   color: #fff;
 }
 
-.mini-cal-header,
-.mini-cal-grid {
+.mini-cal-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
@@ -20,15 +19,24 @@
   text-transform: lowercase;
 }
 
-.mini-cal-cell {
+.mini-cal-grid {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 2px 1px;
-  min-width: 0;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.mini-cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: min-content;
+  row-gap: 2px;
+  column-gap: 2px;
 }
 
 .mini-cal-day-num {
+  grid-row: 1;
+  justify-self: center;
   font-size: 0.95rem;
   line-height: 1.4;
   width: 1.6em;
@@ -39,28 +47,37 @@
   border-radius: 50%;
 }
 
-.mini-cal-today .mini-cal-day-num {
+.mini-cal-today {
   background: #e53935;
   color: #fff;
   font-weight: bold;
 }
 
-.mini-cal-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  width: 100%;
-  margin-top: 2px;
-}
-
+/* A single bar can span multiple day columns, forming one connected area for
+   a multi-day event. */
 .mini-cal-bar {
-  width: 100%;
-  border-radius: 2px;
-  padding: 1px 3px;
+  min-width: 0;
+  border-radius: 3px;
+  margin: 0 1px;
+  padding: 1px 4px;
   font-size: 0.7rem;
-  line-height: 1.3;
+  line-height: 1.35;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   color: #000;
+}
+
+/* When an event continues into an adjacent week, open the corresponding edge so
+   the range reads as continuous across week rows. */
+.mini-cal-bar-cont-left {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 0;
+}
+
+.mini-cal-bar-cont-right {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
 }

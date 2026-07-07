@@ -43,7 +43,11 @@ _TTLS = {
     "garden_temps": 60,
 }
 
-_FETCH_TIMEOUT: float = 60.0  # hard ceiling per source fetch, in seconds
+# Hard ceiling per source fetch, in seconds. Must exceed the slowest source's
+# own client timeout so that timeout surfaces cleanly instead of being masked
+# here. iCloud's webstream (see sources/icloud.py) can take ~50s for large
+# albums, so this sits above its 90s read timeout with margin.
+_FETCH_TIMEOUT: float = 120.0
 
 
 def _backoff_delay(consecutive_failures: int, ttl: int) -> float:

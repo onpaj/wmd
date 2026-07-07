@@ -3,7 +3,14 @@ import respx
 import httpx
 
 from config import AppConfig, ICloudConfig, CalendarConfig, WeatherConfig, HomeAssistantConfig, DisplayConfig
-from sources.icloud import get_photos
+from sources.icloud import get_photos, _TIMEOUT
+
+
+def test_read_timeout_is_generous_for_slow_webstream():
+    # Apple's webstream enumeration for large shared albums can take ~50s to
+    # generate its (multi-MB) response. The read timeout must comfortably
+    # exceed that, or every photo refresh times out mid-response.
+    assert _TIMEOUT.read >= 60.0
 
 
 def make_config(token: str = "testtoken") -> AppConfig:

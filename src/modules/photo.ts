@@ -1,8 +1,11 @@
-import { Photo } from '../types';
+import type { Photo } from '../types';
+
+const ACTIVE_CLASS = 'photo-img--active';
 
 let _interval: ReturnType<typeof setInterval> | null = null;
 let _currentIntervalSeconds = 0;
 let _photos: Photo[] = [];
+let _sourceIds: string[] = [];
 let _index = 0;
 
 function shuffle(arr: Photo[]): Photo[] {
@@ -25,20 +28,49 @@ function formatPhotoDate(iso?: string): string {
   }).format(d);
 }
 
-function swapActive(imgA: HTMLImageElement, imgB: HTMLImageElement, dateEl: HTMLElement): void {
-  const aIsActive = imgA.classList.contains('photo-img--active');
-  const inactive = aIsActive ? imgB : imgA;
+/**
+ * Compares against the ids in server order — `_photos` is shuffled, so comparing
+ * against it would report a change on every poll and restart the slideshow.
+ */
+function hasAlbumChanged(data: Photo[]): boolean {
+  if (data.length !== _sourceIds.length) return true;
+  return data.some((p, i) => p.id !== _sourceIds[i]);
+}
+
+/**
+ * Loads the next photo into the hidden <img> and cross-fades only once it has
+ * decoded, so a partially loaded (or previously shown) image is never revealed.
+ */
+function showNext(imgA: HTMLImageElement, imgB: HTMLImageElement, dateEl: HTMLElement): void {
+  if (_photos.length === 0) return;
+
+  const aIsActive = imgA.classList.contains(ACTIVE_CLASS);
   const active = aIsActive ? imgA : imgB;
+  const inactive = aIsActive ? imgB : imgA;
 
   const next = _photos[_index % _photos.length];
   _index++;
 
   inactive.onload = () => {
-    active.classList.remove('photo-img--active');
-    inactive.classList.add('photo-img--active');
+    active.classList.remove(ACTIVE_CLASS);
+    inactive.classList.add(ACTIVE_CLASS);
     dateEl.textContent = formatPhotoDate(next.date);
   };
+  inactive.onerror = () => {
+    console.error(`Failed to load photo ${next.id}; keeping the current one`);
+  };
   inactive.src = next.url;
+}
+
+function restartTimer(
+  imgA: HTMLImageElement,
+  imgB: HTMLImageElement,
+  dateEl: HTMLElement,
+  seconds: number,
+): void {
+  if (_interval !== null) clearInterval(_interval);
+  _currentIntervalSeconds = seconds;
+  _interval = setInterval(() => showNext(imgA, imgB, dateEl), seconds * 1000);
 }
 
 export function render(data: Photo[], container: HTMLElement, photoIntervalSeconds: number): void {
@@ -50,25 +82,16 @@ export function render(data: Photo[], container: HTMLElement, photoIntervalSecon
   imgA.classList.add('photo-img');
   imgB.classList.add('photo-img');
 
-  const photosChanged = data !== _photos && (
-    data.length !== _photos.length ||
-    data.some((p, i) => p.id !== _photos[i]?.id)
-  );
-
-  if (photosChanged) {
+  const albumChanged = hasAlbumChanged(data);
+  if (albumChanged) {
+    _sourceIds = data.map(p => p.id);
     _photos = shuffle(data);
     _index = 0;
-    // Set first photo immediately
-    imgA.src = _photos[0].url;
-    imgA.classList.add('photo-img--active');
-    imgB.classList.remove('photo-img--active');
-    dateEl.textContent = formatPhotoDate(_photos[0].date);
-    _index = 1;
+    showNext(imgA, imgB, dateEl);
   }
 
-  if (photoIntervalSeconds !== _currentIntervalSeconds) {
-    if (_interval !== null) clearInterval(_interval);
-    _currentIntervalSeconds = photoIntervalSeconds;
-    _interval = setInterval(() => swapActive(imgA, imgB, dateEl), photoIntervalSeconds * 1000);
+  // Restarting after a forced swap keeps a full interval before the next one.
+  if (albumChanged || photoIntervalSeconds !== _currentIntervalSeconds) {
+    restartTimer(imgA, imgB, dateEl, photoIntervalSeconds);
   }
 }

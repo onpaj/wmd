@@ -35,7 +35,8 @@ npm run build    # esbuild src/app.ts --bundle --outfile=static/js/app.js
 npm run watch    # development watch mode
 
 # Tests
-pytest
+pytest      # backend (Python)
+npm test    # frontend (node --test, native TS type stripping)
 
 # Deploy systemd services
 sudo cp systemd/*.service /etc/systemd/system/

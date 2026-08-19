@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "esbuild src/app.ts --bundle --outfile=static/js/app.js --minify",
-    "watch": "esbuild src/app.ts --bundle --outfile=static/js/app.js --watch"
+    "watch": "esbuild src/app.ts --bundle --outfile=static/js/app.js --watch",
+    "test": "node --test \"tests/js/*.test.ts\""
   },
   "devDependencies": {
     "esbuild": "^0.20.0",

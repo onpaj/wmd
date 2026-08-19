@@ -169,3 +169,58 @@ async def test_recurrence_id_override_no_duplicate():
     mm_events = [e for e in events if e.title == "MM Sync"]
     assert len(mm_events) == 1, f"Expected 1 MM Sync event, got {len(mm_events)}: {[(e.start, e.title) for e in mm_events]}"
     assert mm_events[0].start.date().isoformat() == "2026-04-09"
+
+
+@respx.mock
+async def test_parse_runs_off_the_event_loop_thread():
+    """ICS parsing is CPU-heavy (10-20s for real feeds); it must not run on the event loop."""
+    import threading
+    from sources import calendar as calendar_module
+
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+    real_parse = calendar_module._parse_ics
+    parse_threads: list[int] = []
+
+    def recording_parse(*args, **kwargs):
+        parse_threads.append(threading.get_ident())
+        return real_parse(*args, **kwargs)
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW), \
+            mock.patch("sources.calendar._parse_ics", side_effect=recording_parse):
+        await get_events(cfg)
+
+    assert parse_threads, "_parse_ics was never called"
+    assert threading.get_ident() not in parse_threads, (
+        "_parse_ics ran on the event loop thread and would block sibling fetches"
+    )
+
+
+@respx.mock
+async def test_slow_parse_does_not_stall_the_event_loop():
+    """A slow parse must not starve other coroutines (the cause of bogus ConnectTimeouts)."""
+    import asyncio
+    import time as _time
+
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=SIMPLE_ICS))
+    cfg = make_config()
+
+    def slow_parse(*args, **kwargs):
+        _time.sleep(0.4)
+        return []
+
+    ticks = 0
+
+    async def heartbeat() -> None:
+        nonlocal ticks
+        while True:
+            await asyncio.sleep(0.01)
+            ticks += 1
+
+    beat = asyncio.create_task(heartbeat())
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW), \
+            mock.patch("sources.calendar._parse_ics", side_effect=slow_parse):
+        await get_events(cfg)
+    beat.cancel()
+
+    assert ticks >= 10, f"event loop was blocked during parse (only {ticks} ticks in 0.4s)"

@@ -49,6 +49,21 @@ _TTLS = {
 # albums, so this sits above its 90s read timeout with margin.
 _FETCH_TIMEOUT: float = 120.0
 
+# Calendar upstreams (Outlook published-ICS in particular) can reject requests
+# for hours at a time. The default 1h stale window is shorter than those
+# outages, so a calendar silently vanished from the dashboard instead of
+# showing its last-known events. Keep calendar data servable for a day.
+_CALENDAR_STALE_SECONDS: int = 86400
+_DEFAULT_STALE_SECONDS: int = 3600
+_CALENDAR_CACHE_KEYS: frozenset[str] = frozenset({"events", "mini_cal_events"})
+
+
+def _stale_seconds_for(key: str) -> int:
+    """How long a cache key stays servable past its TTL when refreshes keep failing."""
+    if key in _CALENDAR_CACHE_KEYS:
+        return _CALENDAR_STALE_SECONDS
+    return _DEFAULT_STALE_SECONDS
+
 
 def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
     if consecutive_failures == 0:
@@ -174,9 +189,9 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             merged_events.extend(ms365_events)
         if merged_events or (not isinstance(ics_events, BaseException) and not isinstance(ms365_events, BaseException)):
             merged_events.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
-            cache.set("events", merged_events, _TTLS["events"])
+            cache.set("events", merged_events, _TTLS["events"], stale_seconds=_stale_seconds_for("events"))
         if not isinstance(mini_cal, BaseException):
-            cache.set("mini_cal_events", mini_cal, _TTLS["mini_cal_events"])
+            cache.set("mini_cal_events", mini_cal, _TTLS["mini_cal_events"], stale_seconds=_stale_seconds_for("mini_cal_events"))
         if not isinstance(forecast, BaseException):
             cache.set("weather", _to_weather_models(forecast), _TTLS["weather"])
         if not isinstance(ha, BaseException):
@@ -196,7 +211,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
                 value = await asyncio.wait_for(fetch_fn(), timeout=_FETCH_TIMEOUT)
                 if key == "weather":
                     value = _to_weather_models(value)
-                cache.set(key, value, ttl)
+                cache.set(key, value, ttl, stale_seconds=_stale_seconds_for(key))
                 consecutive_failures = 0
             except asyncio.TimeoutError:  # must precede Exception; TimeoutError is a subclass of Exception
                 consecutive_failures += 1
@@ -251,12 +266,12 @@ def create_app(config_path: str = "config.json") -> FastAPI:
                     logger.warning("Calendar '%s' fetch failed: %s", cal.name, result)
                     combined.extend(cache.get(key, return_stale=True) or [])
                 else:
-                    cache.set(key, result, _TTLS["events"])
+                    cache.set(key, result, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
                     combined.extend(result)
 
             try:
                 ms365 = await get_ms365_events(config)
-                cache.set("ms365_cal", ms365, _TTLS["events"])
+                cache.set("ms365_cal", ms365, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
                 combined.extend(ms365)
             except Exception as exc:
                 logger.warning("MS365 calendar fetch failed: %s", exc)

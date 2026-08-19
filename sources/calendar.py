@@ -203,7 +203,13 @@ async def _fetch_calendar(
 ) -> list[CalendarEvent]:
     resp = await client.get(cal_cfg.url)
     resp.raise_for_status()
-    return _parse_ics(resp.content, cal_cfg, window_start, window_end)
+    # Parsing is CPU-bound and slow for real feeds (a 2 MB iCloud export takes
+    # ~20s on a Raspberry Pi). Running it inline would block the event loop and
+    # starve the sibling calendar fetches until their httpx timeout elapsed,
+    # which surfaced as spurious ConnectTimeouts on unrelated calendars.
+    return await asyncio.to_thread(
+        _parse_ics, resp.content, cal_cfg, window_start, window_end
+    )
 
 
 async def get_mini_cal_events(cfg: AppConfig) -> list[CalendarEvent]:

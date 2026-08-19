@@ -8,10 +8,23 @@ class Cache:
     def __init__(self) -> None:
         self._store: dict[str, tuple[Any, float, float]] = {}
 
-    def set(self, key: str, value: Any, ttl_seconds: int) -> None:
+    def set(
+        self,
+        key: str,
+        value: Any,
+        ttl_seconds: int,
+        stale_seconds: int = _STALE_TIMEOUT,
+    ) -> None:
+        """Store a value.
+
+        ``stale_seconds`` controls how long the value stays servable via
+        ``get(return_stale=True)`` after its TTL lapses. Sources whose upstream
+        is known to be flaky (calendars) pass a longer window so a multi-hour
+        outage degrades to slightly-stale data instead of a blank panel.
+        """
         now = time.monotonic()
         expiry = now + ttl_seconds
-        stale_expiry = now + ttl_seconds + _STALE_TIMEOUT
+        stale_expiry = expiry + stale_seconds
         self._store[key] = (value, expiry, stale_expiry)
 
     def get(self, key: str, return_stale: bool = False) -> Any:

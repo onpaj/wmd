@@ -67,3 +67,19 @@ def test_backoff_delay_caps_at_ttl():
 def test_backoff_delay_long_ttl_not_capped_early():
     assert _backoff_delay(4, 1800) == 80   # min(80, 1800) = 80
     assert _backoff_delay(7, 1800) == 640  # min(10 * 2^6, 1800) = 640
+
+
+def test_calendar_keys_get_an_extended_stale_window() -> None:
+    """Calendar upstreams can fail for hours; their data must outlive the 1h default."""
+    from main import _CALENDAR_STALE_SECONDS, _DEFAULT_STALE_SECONDS, _stale_seconds_for
+
+    assert _stale_seconds_for("events") == _CALENDAR_STALE_SECONDS
+    assert _stale_seconds_for("mini_cal_events") == _CALENDAR_STALE_SECONDS
+    assert _CALENDAR_STALE_SECONDS > _DEFAULT_STALE_SECONDS
+
+
+def test_non_calendar_keys_keep_the_default_stale_window() -> None:
+    from main import _DEFAULT_STALE_SECONDS, _stale_seconds_for
+
+    for key in ("photos", "weather", "ha_entities", "meals", "outdoor_temp", "garden_temps"):
+        assert _stale_seconds_for(key) == _DEFAULT_STALE_SECONDS

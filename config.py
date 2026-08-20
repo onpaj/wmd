@@ -71,11 +71,30 @@ class Ms365UserConfig:
 
 
 @dataclass
+class Ms365CalendarConfig:
+    """A named calendar inside a mailbox (e.g. a shared or external work calendar).
+
+    Unlike ``Ms365UserConfig`` — which reads the mailbox's default calendar —
+    this targets one calendar by its display name. ``show_as_busy`` replaces
+    event titles with a neutral label so work items appear on a wall display
+    without leaking their subjects.
+    """
+
+    email: str
+    calendar_name: str
+    name: str
+    color: str
+    exclude_patterns: list[str] = field(default_factory=list)
+    show_as_busy: bool = False
+
+
+@dataclass
 class Ms365Config:
     tenant_id: str
     client_id: str
     client_secret: str
     users: list[Ms365UserConfig]
+    calendars: list[Ms365CalendarConfig] = field(default_factory=list)
 
 
 @dataclass
@@ -173,6 +192,17 @@ def load_config(path: str = "config.json") -> AppConfig:
             client_id=m["clientId"],
             client_secret=m["clientSecret"],
             users=[Ms365UserConfig(email=u["email"], name=u["name"], color=u["color"]) for u in m.get("users", [])],
+            calendars=[
+                Ms365CalendarConfig(
+                    email=c["email"],
+                    calendar_name=c["calendarName"],
+                    name=c["name"],
+                    color=c["color"],
+                    exclude_patterns=c.get("excludePatterns", []),
+                    show_as_busy=c.get("showAsBusy", False),
+                )
+                for c in m.get("calendars", [])
+            ],
         )
 
     strava = None

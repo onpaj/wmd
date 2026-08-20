@@ -144,3 +144,53 @@ def test_load_config_strava_s5_url_defaults_to_none(tmp_path):
     cfg = load_config(str(config_file))
 
     assert cfg.strava.s5_url is None
+
+
+def test_loads_ms365_named_calendars(tmp_path):
+    import json
+    from config import load_config
+    from tests.conftest import SAMPLE_CONFIG
+
+    data = dict(SAMPLE_CONFIG)
+    data["ms365"] = {
+        "tenantId": "t", "clientId": "c", "clientSecret": "s",
+        "users": [],
+        "calendars": [
+            {
+                "email": "ondra@example.com",
+                "calendarName": "Work EXT",
+                "name": "Blue",
+                "color": "#2196F3",
+                "excludePatterns": ["Time[\\s]?block"],
+                "showAsBusy": True,
+            }
+        ],
+    }
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data))
+
+    cfg = load_config(str(p))
+
+    assert len(cfg.ms365.calendars) == 1
+    cal = cfg.ms365.calendars[0]
+    assert cal.email == "ondra@example.com"
+    assert cal.calendar_name == "Work EXT"
+    assert cal.name == "Blue"
+    assert cal.color == "#2196F3"
+    assert cal.exclude_patterns == ["Time[\\s]?block"]
+    assert cal.show_as_busy is True
+
+
+def test_ms365_named_calendars_default_to_empty(tmp_path):
+    import json
+    from config import load_config
+    from tests.conftest import SAMPLE_CONFIG
+
+    data = dict(SAMPLE_CONFIG)
+    data["ms365"] = {"tenantId": "t", "clientId": "c", "clientSecret": "s", "users": []}
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data))
+
+    cfg = load_config(str(p))
+
+    assert cfg.ms365.calendars == []

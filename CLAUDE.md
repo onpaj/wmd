@@ -90,6 +90,11 @@ systemd: wmd-browser
 - Czech locale: "dnes" / "zítra" day labels; "celý den" for all-day events
 - Shows N days ahead (configurable via `calendarDaysAhead`)
 - Microsoft 365 calendar integration via OAuth2 client credentials (Graph API)
+  - `ms365.users` reads each mailbox's **default** calendar
+  - `ms365.calendars` reads a **named** calendar inside a mailbox (shared/external work calendars).
+    `showAsBusy: true` replaces event titles with "Zaneprázdněn" so work items appear on the
+    wall display without revealing their subjects. `excludePatterns` match the real subject,
+    so filtering still works when titles are masked.
 
 ### Mini Calendar
 - 3-week grid (Monday-first), highlights today
@@ -155,6 +160,16 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "clientSecret": "...",
     "users": [
       { "email": "user@example.com", "name": "User", "color": "#4CAF50" }
+    ],
+    "calendars": [
+      {
+        "email": "user@example.com",
+        "calendarName": "Work EXT",
+        "name": "Work",
+        "color": "#2196F3",
+        "excludePatterns": ["Time[\\s]?block"],
+        "showAsBusy": true
+      }
     ]
   },
   "miniCalendar": {

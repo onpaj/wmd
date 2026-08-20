@@ -224,3 +224,69 @@ async def test_slow_parse_does_not_stall_the_event_loop():
     beat.cancel()
 
     assert ticks >= 10, f"event loop was blocked during parse (only {ticks} ticks in 0.4s)"
+
+
+# --- Busy masking for ICS calendars (published work feeds) -------------------
+
+BUSY_ICS = b"""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART:20260407T090000Z
+DTEND:20260407T100000Z
+SUMMARY:Confidential client call
+LOCATION:Board room
+UID:busy-1
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20260407T110000Z
+DTEND:20260407T120000Z
+SUMMARY:Timeblock
+UID:busy-2
+END:VEVENT
+END:VCALENDAR"""
+
+
+def make_busy_config(show_as_busy: bool, exclude=None) -> AppConfig:
+    cfg = make_config()
+    cfg.calendars = [CalendarConfig(
+        name="Blue", url=CAL_URL, color="#2196F3",
+        exclude_patterns=exclude or [], show_as_busy=show_as_busy,
+    )]
+    return cfg
+
+
+@respx.mock
+async def test_ics_show_as_busy_masks_titles_and_location():
+    from models import BUSY_LABEL
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=BUSY_ICS))
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(make_busy_config(show_as_busy=True))
+
+    assert len(events) == 2
+    assert {e.title for e in events} == {BUSY_LABEL}
+    assert all(e.location is None for e in events), "location must not leak when masked"
+
+
+@respx.mock
+async def test_ics_show_as_busy_off_keeps_real_titles():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=BUSY_ICS))
+
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(make_busy_config(show_as_busy=False))
+
+    assert "Confidential client call" in {e.title for e in events}
+
+
+@respx.mock
+async def test_ics_exclude_patterns_match_real_summary_when_masked():
+    """Timeblocks must still be filtered even though titles render as busy."""
+    from models import BUSY_LABEL
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=BUSY_ICS))
+
+    cfg = make_busy_config(show_as_busy=True, exclude=["Time[\\s]?block"])
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(cfg)
+
+    assert len(events) == 1
+    assert events[0].title == BUSY_LABEL

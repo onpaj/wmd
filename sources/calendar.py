@@ -10,7 +10,7 @@ from dateutil.rrule import rrulestr
 from icalendar import Calendar
 
 from config import AppConfig, CalendarConfig
-from models import CalendarEvent
+from models import BUSY_LABEL, CalendarEvent
 
 
 def _now_utc() -> datetime:
@@ -95,6 +95,12 @@ def _parse_ics(
 
         if compiled and any(rx.search(summary) for rx in compiled):
             continue
+
+        # Mask only after the exclude check, so patterns keep matching the real
+        # subject on feeds that are displayed as busy.
+        if cal_cfg.show_as_busy:
+            summary = BUSY_LABEL
+            location = None
 
         if "RRULE" in component:
             # Expand recurring events

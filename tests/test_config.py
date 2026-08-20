@@ -194,3 +194,22 @@ def test_ms365_named_calendars_default_to_empty(tmp_path):
     cfg = load_config(str(p))
 
     assert cfg.ms365.calendars == []
+
+
+def test_loads_calendar_show_as_busy(tmp_path):
+    import json
+    from config import load_config
+    from tests.conftest import SAMPLE_CONFIG
+
+    data = json.loads(json.dumps(SAMPLE_CONFIG))
+    data["calendars"] = [
+        {"name": "Work", "url": "https://x/f.ics", "color": "#2196F3", "showAsBusy": True},
+        {"name": "Home", "url": "https://y/f.ics", "color": "#4CAF50"},
+    ]
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data))
+
+    cfg = load_config(str(p))
+
+    assert cfg.calendars[0].show_as_busy is True
+    assert cfg.calendars[1].show_as_busy is False

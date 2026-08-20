@@ -15,6 +15,7 @@ class CalendarConfig:
     url: str
     color: str
     exclude_patterns: list[str] = field(default_factory=list)
+    show_as_busy: bool = False
 
 
 @dataclass
@@ -142,6 +143,7 @@ def load_config(path: str = "config.json") -> AppConfig:
             url=c["url"],
             color=c["color"],
             exclude_patterns=c.get("excludePatterns", []),
+            show_as_busy=c.get("showAsBusy", False),
         )
         for c in data.get("calendars", [])
     ]

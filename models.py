@@ -3,6 +3,11 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+# Shown instead of the real subject when a calendar is configured with
+# ``showAsBusy`` — work items occupy their slot on the wall display
+# without revealing what they are.
+BUSY_LABEL = "Zaneprázdněn"
+
 class Photo(BaseModel):
     id: str
     url: str

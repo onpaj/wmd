@@ -7,14 +7,9 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 from config import AppConfig, Ms365CalendarConfig
-from models import CalendarEvent
+from models import BUSY_LABEL, CalendarEvent
 
 logger = logging.getLogger(__name__)
-
-# Shown instead of the real subject when a calendar is configured with
-# ``showAsBusy`` — work items appear on the wall display as a time block
-# without revealing what they are.
-BUSY_LABEL = "Zaneprázdněn"
 
 
 def _now_utc() -> datetime:

@@ -89,6 +89,9 @@ systemd: wmd-browser
 - Multiple calendars with color-coded borders (gradient for overlapping events)
 - Czech locale: "dnes" / "zítra" day labels; "celý den" for all-day events
 - Shows N days ahead (configurable via `calendarDaysAhead`)
+- `showAsBusy: true` replaces event titles with "Zaneprázdněn" and drops the location, for
+  published work feeds that should occupy their slot without revealing subjects.
+  `excludePatterns` are matched against the real subject first, so filtering still works.
 - Microsoft 365 calendar integration via OAuth2 client credentials (Graph API)
   - `ms365.users` reads each mailbox's **default** calendar
   - `ms365.calendars` reads a **named** calendar inside a mailbox (shared/external work calendars).
@@ -133,7 +136,7 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "photoIntervalSeconds": 30
   },
   "calendars": [
-    { "name": "Family", "url": "https://...", "color": "#4CAF50", "excludePatterns": [] }
+    { "name": "Family", "url": "https://...", "color": "#4CAF50", "excludePatterns": [], "showAsBusy": false }
   ],
   "weather": {
     "provider": "metno",

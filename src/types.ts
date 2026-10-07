@@ -52,10 +52,8 @@ export interface StravaMeals {
 export interface GardenTemps {
   glasshouse: number | null;
   coop: number | null;
-  brooder: number | null;
   glasshouse_humidity: number | null;
   coop_humidity: number | null;
-  brooder_humidity: number | null;
 }
 
 export interface CarStatus {

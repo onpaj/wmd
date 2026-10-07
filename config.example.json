@@ -24,8 +24,6 @@
     "glasshouseHumidityEntityId": "",
     "coopEntityId": "",
     "coopHumidityEntityId": "",
-    "brooderEntityId": "",
-    "brooderHumidityEntityId": "",
     "carBatteryEntityId": "",
     "carRangeEntityId": "",
     "carChargingEntityId": ""

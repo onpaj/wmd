@@ -7,6 +7,10 @@ from config import AppConfig
 from models import CarStatus, GardenTemps, HaEntity
 
 
+# Charging-sensor states that mean energy is (about to be) flowing into the car
+_CAR_CHARGING_STATES = frozenset({"charging", "starting"})
+
+
 class CarStatusUnavailable(Exception):
     """Battery level could not be read; raised so the cache keeps serving the last good value."""
 
@@ -41,19 +45,27 @@ async def _fetch_float(client: httpx.AsyncClient, ha_url: str, token: str, entit
     return value if math.isfinite(value) else None
 
 
+async def _fetch_is_charging(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str) -> bool:
+    if not entity_id:
+        return False
+    entity = await _fetch_entity(client, ha_url, token, entity_id, "")
+    return entity is not None and entity.state in _CAR_CHARGING_STATES
+
+
 async def get_car_status(cfg: AppConfig) -> CarStatus | None:
     ha = cfg.home_assistant
     if not ha.car_battery_entity_id:
         return None
     ha_url = ha.url.rstrip("/")
     async with httpx.AsyncClient(timeout=10.0) as client:
-        battery, range_km = await asyncio.gather(
+        battery, range_km, is_charging = await asyncio.gather(
             _fetch_float(client, ha_url, ha.token, ha.car_battery_entity_id),
             _fetch_float(client, ha_url, ha.token, ha.car_range_entity_id),
+            _fetch_is_charging(client, ha_url, ha.token, ha.car_charging_entity_id),
         )
     if battery is None:
         raise CarStatusUnavailable(ha.car_battery_entity_id)
-    return CarStatus(battery_percent=battery, range_km=range_km)
+    return CarStatus(battery_percent=battery, range_km=range_km, is_charging=is_charging)
 
 
 async def get_outdoor_temp(cfg: AppConfig) -> float | None:

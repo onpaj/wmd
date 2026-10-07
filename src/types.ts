@@ -61,6 +61,7 @@ export interface GardenTemps {
 export interface CarStatus {
   battery_percent: number;
   range_km: number | null;
+  is_charging: boolean;
 }
 
 export interface DashboardData {

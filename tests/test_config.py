@@ -221,6 +221,7 @@ def test_loads_car_entity_ids(tmp_path):
     data = json.loads(json.dumps(SAMPLE_CONFIG))
     data["homeAssistant"]["carBatteryEntityId"] = "sensor.berta_battery_level"
     data["homeAssistant"]["carRangeEntityId"] = "sensor.berta_battery_range"
+    data["homeAssistant"]["carChargingEntityId"] = "sensor.berta_charging"
     p = tmp_path / "config.json"
     p.write_text(json.dumps(data))
 
@@ -228,6 +229,7 @@ def test_loads_car_entity_ids(tmp_path):
 
     assert cfg.home_assistant.car_battery_entity_id == "sensor.berta_battery_level"
     assert cfg.home_assistant.car_range_entity_id == "sensor.berta_battery_range"
+    assert cfg.home_assistant.car_charging_entity_id == "sensor.berta_charging"
 
 
 def test_car_entity_ids_default_to_empty(sample_config):
@@ -235,3 +237,4 @@ def test_car_entity_ids_default_to_empty(sample_config):
 
     assert cfg.home_assistant.car_battery_entity_id == ""
     assert cfg.home_assistant.car_range_entity_id == ""
+    assert cfg.home_assistant.car_charging_entity_id == ""

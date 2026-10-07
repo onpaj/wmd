@@ -126,7 +126,7 @@ systemd: wmd-browser
 - Outdoor temperature sensor
 - Concurrent entity fetching; errors are non-fatal
 - Car tile (🚗 battery % + range km) in the garden-temps row, from `carBatteryEntityId` /
-  `carRangeEntityId`; battery under 20 % turns amber. If the battery sensor is unreadable the
+  `carRangeEntityId`; ⚡ prefix while `carChargingEntityId` is `charging`/`starting`; battery under 20 % turns amber. If the battery sensor is unreadable the
   last good value is kept (stale-while-revalidate) rather than blanking the tile.
 
 ## Configuration
@@ -157,7 +157,8 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "lunchTomorrowEntityId": "sensor.lunch_tomorrow",
     "outsideTemperature": "sensor.outside_temp",
     "carBatteryEntityId": "sensor.car_battery_level",
-    "carRangeEntityId": "sensor.car_battery_range"
+    "carRangeEntityId": "sensor.car_battery_range",
+    "carChargingEntityId": "sensor.car_charging"
   },
   "display": {
     "calendarDaysAhead": 2,

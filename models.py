@@ -71,6 +71,7 @@ class GardenTemps(BaseModel):
 class CarStatus(BaseModel):
     battery_percent: float
     range_km: float | None = None
+    is_charging: bool = False
 
 
 class DashboardData(BaseModel):

@@ -2,6 +2,7 @@ import type { CarStatus } from '../types';
 
 const LOW_BATTERY_PERCENT = 20;
 const CAR_ICON = '🚗';
+const CHARGING_ICON = '⚡';
 
 export interface CarView {
   battery: string;
@@ -12,7 +13,7 @@ export interface CarView {
 export function formatCar(car: CarStatus | null): CarView | null {
   if (!car) return null;
   return {
-    battery: `${Math.round(car.battery_percent)} %`,
+    battery: `${car.is_charging ? CHARGING_ICON : ''}${Math.round(car.battery_percent)} %`,
     range: car.range_km !== null ? `${Math.round(car.range_km)} km` : '—',
     isLow: car.battery_percent < LOW_BATTERY_PERCENT,
   };

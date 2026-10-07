@@ -27,7 +27,8 @@
     "brooderEntityId": "",
     "brooderHumidityEntityId": "",
     "carBatteryEntityId": "",
-    "carRangeEntityId": ""
+    "carRangeEntityId": "",
+    "carChargingEntityId": ""
   },
   "display": {
     "calendarDaysAhead": 2,

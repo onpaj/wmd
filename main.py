@@ -46,9 +46,10 @@ _TTLS = {
 
 # Hard ceiling per source fetch, in seconds. Must exceed the slowest source's
 # own client timeout so that timeout surfaces cleanly instead of being masked
-# here. iCloud's webstream (see sources/icloud.py) can take ~50s for large
-# albums, so this sits above its 90s read timeout with margin.
-_FETCH_TIMEOUT: float = 120.0
+# here. iCloud's webstream (see sources/icloud.py) can be slow for large
+# albums (113s seen for ~3400 photos), so this sits above its 180s read timeout
+# with margin.
+_FETCH_TIMEOUT: float = 240.0
 
 # Calendar upstreams (Outlook published-ICS in particular) can reject requests
 # for hours at a time. The default 1h stale window is shorter than those
@@ -70,6 +71,13 @@ def _backoff_delay(consecutive_failures: int, ttl: int) -> float:
     if consecutive_failures == 0:
         return ttl
     return min(10 * (2 ** (consecutive_failures - 1)), ttl)
+
+
+def _initial_failures(cached_value: object) -> int:
+    """Start a refresh loop as if it had already failed once when the startup
+    fetch left nothing in the cache, so it retries in seconds rather than
+    waiting a full TTL (an hour for photos) with an empty dashboard."""
+    return 0 if cached_value is not None else 1
 
 
 def _wayland_env() -> dict[str, str] | None:
@@ -182,7 +190,9 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             get_car_status(config),
             return_exceptions=True,
         )
-        if not isinstance(photos, BaseException):
+        if isinstance(photos, BaseException):
+            logger.warning("Startup photo fetch failed: %r", photos)
+        else:
             cache.set("photos", photos, _TTLS["photos"])
         merged_events = []
         if not isinstance(ics_events, BaseException):
@@ -208,7 +218,10 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             cache.set("car", car, _TTLS["car"])
 
     async def _refresh_loop(key: str, fetch_fn, ttl: int) -> None:
-        consecutive_failures = 0
+        # Let the startup fetch finish first (bounded, so one hung source can't
+        # stall every loop), then retry quickly if it left this key empty.
+        await asyncio.wait({app.state.startup_task}, timeout=_FETCH_TIMEOUT)
+        consecutive_failures = _initial_failures(cache.get(key, return_stale=True))
         while True:
             await asyncio.sleep(_backoff_delay(consecutive_failures, ttl))
             try:

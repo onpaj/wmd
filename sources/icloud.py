@@ -7,11 +7,11 @@ _photo_url_map: dict[str, str] = {}
 
 _BASE_URL = "https://p01-sharedstreams.icloud.com/{token}/sharedstreams"
 
-# Apple's `webstream` enumeration for large shared albums can take ~50s to
+# Apple's `webstream` enumeration for large shared albums can take ~50-115s to
 # generate its multi-MB response, so the read timeout must be generous. Connect
 # stays short so an unreachable host fails fast instead of stalling the fetch.
 _CONNECT_TIMEOUT_SECONDS = 10.0
-_READ_TIMEOUT_SECONDS = 90.0
+_READ_TIMEOUT_SECONDS = 180.0
 _TIMEOUT = httpx.Timeout(_READ_TIMEOUT_SECONDS, connect=_CONNECT_TIMEOUT_SECONDS)
 
 

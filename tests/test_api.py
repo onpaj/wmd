@@ -2,7 +2,7 @@ import json
 import pytest
 import httpx
 from httpx import ASGITransport
-from main import _backoff_delay
+from main import _backoff_delay, _initial_failures
 
 
 @pytest.fixture
@@ -83,3 +83,13 @@ def test_non_calendar_keys_keep_the_default_stale_window() -> None:
 
     for key in ("photos", "weather", "ha_entities", "meals", "outdoor_temp", "garden_temps", "car"):
         assert _stale_seconds_for(key) == _DEFAULT_STALE_SECONDS
+
+
+def test_initial_failures_zero_when_startup_cached_a_value():
+    assert _initial_failures([]) == 0
+    assert _initial_failures(["photo"]) == 0
+
+
+def test_initial_failures_one_when_startup_left_cache_empty():
+    # Startup fetch failed -> retry on the short backoff, not after a full TTL.
+    assert _initial_failures(None) == 1

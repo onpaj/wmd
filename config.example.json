@@ -25,7 +25,9 @@
     "coopEntityId": "",
     "coopHumidityEntityId": "",
     "brooderEntityId": "",
-    "brooderHumidityEntityId": ""
+    "brooderHumidityEntityId": "",
+    "carBatteryEntityId": "",
+    "carRangeEntityId": ""
   },
   "display": {
     "calendarDaysAhead": 2,

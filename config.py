@@ -43,6 +43,8 @@ class HomeAssistantConfig:
     glasshouse_humidity_entity_id: str = ""
     coop_humidity_entity_id: str = ""
     brooder_humidity_entity_id: str = ""
+    car_battery_entity_id: str = ""
+    car_range_entity_id: str = ""
 
 
 @dataclass
@@ -167,6 +169,8 @@ def load_config(path: str = "config.json") -> AppConfig:
         glasshouse_humidity_entity_id=ha_data.get("glasshouseHumidityEntityId", ""),
         coop_humidity_entity_id=ha_data.get("coopHumidityEntityId", ""),
         brooder_humidity_entity_id=ha_data.get("brooderHumidityEntityId", ""),
+        car_battery_entity_id=ha_data.get("carBatteryEntityId", ""),
+        car_range_entity_id=ha_data.get("carRangeEntityId", ""),
     )
 
     display_data = data["display"]

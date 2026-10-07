@@ -5,11 +5,13 @@ import { render as renderPhotos } from './modules/photo';
 import { render as renderCalendar } from './modules/calendar';
 import { render as renderWeather, renderTemperatures } from './modules/weather';
 import { render as renderMiniCal } from './modules/mini-calendar';
+import { render as renderCar } from './modules/car';
 
 function update(data: DashboardData): void {
   renderPhotos(data.photos, document.getElementById('photo-area')!, data.photo_interval_seconds);
   renderCalendar(data.events, document.getElementById('calendar-area')!);
-  renderTemperatures(data.garden_temps, document.getElementById('garden-temps-area')!);
+  renderTemperatures(data.garden_temps, document.getElementById('garden-temps')!);
+  renderCar(data.car, document.getElementById('car-status')!);
   renderWeather(data.weather, document.getElementById('weather-area')!);
   renderMiniCal(data.mini_cal_events, document.getElementById('mini-cal-area')!);
   updateMeals(data.meals);

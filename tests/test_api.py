@@ -81,5 +81,5 @@ def test_calendar_keys_get_an_extended_stale_window() -> None:
 def test_non_calendar_keys_keep_the_default_stale_window() -> None:
     from main import _DEFAULT_STALE_SECONDS, _stale_seconds_for
 
-    for key in ("photos", "weather", "ha_entities", "meals", "outdoor_temp", "garden_temps"):
+    for key in ("photos", "weather", "ha_entities", "meals", "outdoor_temp", "garden_temps", "car"):
         assert _stale_seconds_for(key) == _DEFAULT_STALE_SECONDS

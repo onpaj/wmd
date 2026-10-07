@@ -19,7 +19,7 @@ from models import DashboardData
 from models import WeatherDay as WeatherDayModel
 from sources.calendar import get_events, get_events_per_calendar, get_mini_cal_events
 from sources.ms365 import get_ms365_events
-from sources.homeassistant import get_entities, get_garden_temps, get_outdoor_temp
+from sources.homeassistant import get_car_status, get_entities, get_garden_temps, get_outdoor_temp
 from sources.icloud import get_photo_url, get_photos
 from sources.strava import get_strava_meals
 from sources.weather import get_forecast
@@ -41,6 +41,7 @@ _TTLS = {
     "meals": 1800,
     "outdoor_temp": 60,
     "garden_temps": 60,
+    "car": 60,
 }
 
 # Hard ceiling per source fetch, in seconds. Must exceed the slowest source's
@@ -168,7 +169,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         ]
 
     async def _populate_cache() -> None:
-        photos, ics_events, ms365_events, mini_cal, forecast, ha, meals, outdoor_temp, garden_temps = await asyncio.gather(
+        photos, ics_events, ms365_events, mini_cal, forecast, ha, meals, outdoor_temp, garden_temps, car = await asyncio.gather(
             get_photos(config),
             get_events(config),
             get_ms365_events(config),
@@ -178,6 +179,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             get_strava_meals(config),
             get_outdoor_temp(config),
             get_garden_temps(config),
+            get_car_status(config),
             return_exceptions=True,
         )
         if not isinstance(photos, BaseException):
@@ -202,6 +204,8 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             cache.set("outdoor_temp", outdoor_temp, _TTLS["outdoor_temp"])
         if not isinstance(garden_temps, BaseException):
             cache.set("garden_temps", garden_temps, _TTLS["garden_temps"])
+        if not isinstance(car, BaseException):
+            cache.set("car", car, _TTLS["car"])
 
     async def _refresh_loop(key: str, fetch_fn, ttl: int) -> None:
         consecutive_failures = 0
@@ -294,6 +298,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
         asyncio.create_task(_refresh_loop("meals", lambda: get_strava_meals(config), _TTLS["meals"]))
         asyncio.create_task(_refresh_loop("outdoor_temp", lambda: get_outdoor_temp(config), _TTLS["outdoor_temp"]))
         asyncio.create_task(_refresh_loop("garden_temps", lambda: get_garden_temps(config), _TTLS["garden_temps"]))
+        asyncio.create_task(_refresh_loop("car", lambda: get_car_status(config), _TTLS["car"]))
         if config.display.sleep_hours is not None:
             asyncio.create_task(_display_sleep_loop())
 
@@ -308,6 +313,7 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             meals=cache.get("meals", return_stale=True),
             outdoor_temp=cache.get("outdoor_temp", return_stale=True),
             garden_temps=cache.get("garden_temps", return_stale=True),
+            car=cache.get("car", return_stale=True),
             photo_interval_seconds=config.icloud.photo_interval_seconds,
             server_time=datetime.now(timezone.utc),
         )

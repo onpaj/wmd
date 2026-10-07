@@ -68,6 +68,11 @@ class GardenTemps(BaseModel):
     brooder_humidity: float | None = None
 
 
+class CarStatus(BaseModel):
+    battery_percent: float
+    range_km: float | None = None
+
+
 class DashboardData(BaseModel):
     photos: list[Photo]
     events: list[CalendarEvent]
@@ -77,5 +82,6 @@ class DashboardData(BaseModel):
     meals: StravaMeals | None
     outdoor_temp: float | None
     garden_temps: GardenTemps | None = None
+    car: CarStatus | None = None
     photo_interval_seconds: int
     server_time: datetime

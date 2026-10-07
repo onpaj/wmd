@@ -213,3 +213,25 @@ def test_loads_calendar_show_as_busy(tmp_path):
 
     assert cfg.calendars[0].show_as_busy is True
     assert cfg.calendars[1].show_as_busy is False
+
+
+def test_loads_car_entity_ids(tmp_path):
+    from tests.conftest import SAMPLE_CONFIG
+
+    data = json.loads(json.dumps(SAMPLE_CONFIG))
+    data["homeAssistant"]["carBatteryEntityId"] = "sensor.berta_battery_level"
+    data["homeAssistant"]["carRangeEntityId"] = "sensor.berta_battery_range"
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data))
+
+    cfg = load_config(str(p))
+
+    assert cfg.home_assistant.car_battery_entity_id == "sensor.berta_battery_level"
+    assert cfg.home_assistant.car_range_entity_id == "sensor.berta_battery_range"
+
+
+def test_car_entity_ids_default_to_empty(sample_config):
+    cfg = load_config(sample_config)
+
+    assert cfg.home_assistant.car_battery_entity_id == ""
+    assert cfg.home_assistant.car_range_entity_id == ""

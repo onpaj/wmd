@@ -58,6 +58,11 @@ export interface GardenTemps {
   brooder_humidity: number | null;
 }
 
+export interface CarStatus {
+  battery_percent: number;
+  range_km: number | null;
+}
+
 export interface DashboardData {
   photos: Photo[];
   events: CalendarEvent[];
@@ -67,6 +72,7 @@ export interface DashboardData {
   meals: StravaMeals | null;
   outdoor_temp: number | null;
   garden_temps: GardenTemps | null;
+  car: CarStatus | null;
   photo_interval_seconds: number;
   server_time: string;
 }

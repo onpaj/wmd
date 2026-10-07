@@ -8,6 +8,16 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* Both children join the row's flex layout so all tiles share the spacing */
+#garden-temps,
+#car-status {
+  display: contents;
+}
+
+.car-battery-low {
+  color: #FF9800;
+}
+
 .garden-temp-item {
   display: flex;
   flex-direction: column;

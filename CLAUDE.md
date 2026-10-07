@@ -68,6 +68,7 @@ systemd: wmd-browser
 | Home Assistant entities | `sources/homeassistant.py` | 1 min |
 | HA meal sensors | `sources/homeassistant.py` | 5 min |
 | HA outdoor temperature | `sources/homeassistant.py` | 1 min |
+| HA car battery / range | `sources/homeassistant.py` | 1 min |
 | MS365 calendars | `sources/ms365.py` | 5 min |
 
 **Frontend modules** (`src/modules/`): `photo.ts`, `calendar.ts`, `clock.ts`, `weather.ts`, `mini-calendar.ts`
@@ -124,6 +125,9 @@ systemd: wmd-browser
 - Dedicated support for meal sensors (soup today/tomorrow, lunch today/tomorrow)
 - Outdoor temperature sensor
 - Concurrent entity fetching; errors are non-fatal
+- Car tile (🚗 battery % + range km) in the garden-temps row, from `carBatteryEntityId` /
+  `carRangeEntityId`; battery under 20 % turns amber. If the battery sensor is unreadable the
+  last good value is kept (stale-while-revalidate) rather than blanking the tile.
 
 ## Configuration
 
@@ -151,7 +155,9 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "soupTomorrowEntityId": "sensor.soup_tomorrow",
     "lunchTodayEntityId": "sensor.lunch_today",
     "lunchTomorrowEntityId": "sensor.lunch_tomorrow",
-    "outsideTemperature": "sensor.outside_temp"
+    "outsideTemperature": "sensor.outside_temp",
+    "carBatteryEntityId": "sensor.car_battery_level",
+    "carRangeEntityId": "sensor.car_battery_range"
   },
   "display": {
     "calendarDaysAhead": 2,

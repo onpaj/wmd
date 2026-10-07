@@ -290,3 +290,56 @@ async def test_ics_exclude_patterns_match_real_summary_when_masked():
 
     assert len(events) == 1
     assert events[0].title == BUSY_LABEL
+
+
+# --- Floating times (no Z, no TZID) are local wall-clock time ----------------
+# e.g. the ČD "Můj vlak" app writes DTSTART:20261008T103500 for a 10:35 train.
+
+FLOATING_ICS = b"""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+DTSTART:20261008T103500
+DTEND:20261008T130200
+SUMMARY:Cesta z Nove Mesto do Brno
+UID:floating-1
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20260105T090000
+DTEND:20260105T093000
+RRULE:FREQ=DAILY
+EXDATE:20261009T090000
+SUMMARY:Floating standup
+UID:floating-2
+END:VEVENT
+END:VCALENDAR"""
+
+FLOATING_NOW = datetime(2026, 10, 8, 0, 0, 0, tzinfo=timezone.utc)
+
+
+@respx.mock
+async def test_floating_event_is_interpreted_as_prague_local_time():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=FLOATING_ICS))
+
+    with mock.patch("sources.calendar._now_utc", return_value=FLOATING_NOW):
+        events = await get_events(make_config())
+
+    train = next(e for e in events if e.title.startswith("Cesta"))
+    # 10:35 CEST == 08:35 UTC
+    assert train.start == datetime(2026, 10, 8, 8, 35, tzinfo=timezone.utc)
+    assert train.end == datetime(2026, 10, 8, 11, 2, tzinfo=timezone.utc)
+
+
+@respx.mock
+async def test_floating_recurring_event_keeps_wall_clock_and_honours_exdate():
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=FLOATING_ICS))
+
+    with mock.patch("sources.calendar._now_utc", return_value=FLOATING_NOW):
+        events = await get_events(make_config())
+
+    starts = sorted(e.start for e in events if e.title == "Floating standup")
+    # Started in winter (CET), still 09:00 local in summer time (07:00 UTC);
+    # the 9th is excluded via a floating EXDATE.
+    assert starts == [
+        datetime(2026, 10, 8, 7, 0, tzinfo=timezone.utc),
+        datetime(2026, 10, 10, 7, 0, tzinfo=timezone.utc),
+    ]

@@ -12,6 +12,10 @@ from icalendar import Calendar
 from config import AppConfig, CalendarConfig
 from models import BUSY_LABEL, CalendarEvent
 
+# Floating times (no "Z", no TZID) are local wall-clock time per RFC 5545.
+# Apps like ČD "Můj vlak" emit them, so they must be read in the wall's zone.
+LOCAL_TZ = ZoneInfo("Europe/Prague")
+
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -24,9 +28,13 @@ def _localize_with_tzid(dt_prop: Any, raw_dt: Any) -> Any:
     (e.g. always UTC+1 for Europe/Prague) instead of a proper DST-aware object.
     Re-applying the TZID via zoneinfo.ZoneInfo ensures the correct UTC offset for
     any date, including those that fall in DST (summer time).
+
+    Floating (naive) datetimes are pinned to LOCAL_TZ.
     """
-    if not isinstance(raw_dt, datetime) or raw_dt.tzinfo is None:
+    if not isinstance(raw_dt, datetime):
         return raw_dt
+    if raw_dt.tzinfo is None:
+        return raw_dt.replace(tzinfo=LOCAL_TZ)
     params = getattr(dt_prop, "params", {}) or {}
     tzid = params.get("TZID")
     if not tzid:
@@ -41,7 +49,7 @@ def _localize_with_tzid(dt_prop: Any, raw_dt: Any) -> Any:
 def _to_utc_datetime(dt: Any) -> datetime:
     if isinstance(dt, datetime):
         if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=LOCAL_TZ)
         return dt.astimezone(timezone.utc)
     # date (all-day)
     return datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
@@ -107,11 +115,11 @@ def _parse_ics(
             rrule_str = component["RRULE"].to_ical().decode()
             dtstart_dt = _to_utc_datetime(raw_start)
 
-            # For timezone-aware events, expand in the original timezone so that
-            # wall-clock time is preserved across DST transitions (e.g. a 09:00
-            # CET event should still show as 09:00 CEST in summer, not 10:00).
-            # For floating/naive datetimes there is no timezone to preserve, so
-            # we fall back to treating them as UTC.
+            # For timed events (floating ones are already pinned to LOCAL_TZ),
+            # expand in the original timezone so that wall-clock time is
+            # preserved across DST transitions (e.g. a 09:00 CET event should
+            # still show as 09:00 CEST in summer, not 10:00). Only all-day
+            # (date-valued) events take the naive branch.
             has_tz = isinstance(raw_start, datetime) and raw_start.tzinfo is not None
             if has_tz:
                 rule = rrulestr(rrule_str, dtstart=raw_start, ignoretz=False)

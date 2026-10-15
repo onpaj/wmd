@@ -1,4 +1,5 @@
 import { StravaMeals, StravaDay } from '../types';
+import { formatNameDay } from './nameday.ts';
 
 let _soupEl: HTMLElement | null = null;
 let _lunchEl: HTMLElement | null = null;
@@ -72,6 +73,9 @@ export function startClock(container: HTMLElement): void {
   const mealsEl = document.createElement('div');
   mealsEl.id = 'clock-meals';
 
+  const nameDayEl = document.createElement('div');
+  nameDayEl.id = 'clock-nameday';
+
   _marksEl = document.createElement('div');
   _marksEl.id = 'clock-meal-marks';
 
@@ -85,7 +89,7 @@ export function startClock(container: HTMLElement): void {
   _lunchEl.id = 'clock-lunch';
 
   mealTextEl.append(_soupEl, _lunchEl);
-  mealsEl.append(_marksEl, mealTextEl);
+  mealsEl.append(nameDayEl, _marksEl, mealTextEl);
   container.append(topRowEl, mealsEl);
 
   function tick(): void {
@@ -93,6 +97,7 @@ export function startClock(container: HTMLElement): void {
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     timeEl.textContent = `${hh}:${mm}`;
+    nameDayEl.textContent = formatNameDay(now);
     renderMeals();
   }
   tick();

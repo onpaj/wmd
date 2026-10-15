@@ -82,3 +82,10 @@
   background: #9E9E9E;
   opacity: 0.5;
 }
+
+#clock-nameday {
+  margin-right: auto;
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  font-weight: 400;
+  opacity: 0.85;
+}

@@ -14,7 +14,6 @@ const ICON_MAP: Record<string, string> = {
 };
 
 const GARDEN_SENSORS: { key: keyof GardenTemps; humKey: keyof GardenTemps; icon: string; label: string; decimals: number }[] = [
-  { key: 'glasshouse', humKey: 'glasshouse_humidity', icon: '🪴', label: 'Skleník', decimals: 0 },
   { key: 'coop',       humKey: 'coop_humidity',       icon: '🐔', label: 'Kurník',  decimals: 0 },
 ];
 

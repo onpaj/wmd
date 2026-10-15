@@ -119,7 +119,7 @@ systemd: wmd-browser
 - Outdoor temperature from Home Assistant sensor
 - Meal display (soup + lunch) for today/tomorrow from HA entities
 - Switches to tomorrow's meals after 12:30
-- Czech name day ("Svátek: …") left of the meals, from a static table in `src/data/namedays.ts`
+- Czech name day ("Svátek: …") on its own line under the clock, from a static table in `src/data/namedays.ts`
   (no backend/config); blank on name-less public holidays
 
 ### Home Assistant Integration

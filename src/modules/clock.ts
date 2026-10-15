@@ -89,8 +89,8 @@ export function startClock(container: HTMLElement): void {
   _lunchEl.id = 'clock-lunch';
 
   mealTextEl.append(_soupEl, _lunchEl);
-  mealsEl.append(nameDayEl, _marksEl, mealTextEl);
-  container.append(topRowEl, mealsEl);
+  mealsEl.append(_marksEl, mealTextEl);
+  container.append(topRowEl, nameDayEl, mealsEl);
 
   function tick(): void {
     const now = new Date();

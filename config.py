@@ -37,9 +37,7 @@ class HomeAssistantConfig:
     token: str
     entities: list[HaEntityConfig]
     outside_temperature_entity_id: str = ""
-    glasshouse_entity_id: str = ""
     coop_entity_id: str = ""
-    glasshouse_humidity_entity_id: str = ""
     coop_humidity_entity_id: str = ""
     car_battery_entity_id: str = ""
     car_range_entity_id: str = ""
@@ -162,9 +160,7 @@ def load_config(path: str = "config.json") -> AppConfig:
         token=ha_data["token"],
         entities=[HaEntityConfig(entity_id=e["id"], label=e.get("label", "")) for e in ha_data.get("entities", [])],
         outside_temperature_entity_id=ha_data.get("outsideTemperature", ""),
-        glasshouse_entity_id=ha_data.get("glasshouseEntityId", ""),
         coop_entity_id=ha_data.get("coopEntityId", ""),
-        glasshouse_humidity_entity_id=ha_data.get("glasshouseHumidityEntityId", ""),
         coop_humidity_entity_id=ha_data.get("coopHumidityEntityId", ""),
         car_battery_entity_id=ha_data.get("carBatteryEntityId", ""),
         car_range_entity_id=ha_data.get("carRangeEntityId", ""),

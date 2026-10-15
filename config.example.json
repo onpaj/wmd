@@ -20,8 +20,6 @@
     "url": "http://homeassistant.local:8123",
     "token": "",
     "entities": [],
-    "glasshouseEntityId": "",
-    "glasshouseHumidityEntityId": "",
     "coopEntityId": "",
     "coopHumidityEntityId": "",
     "carBatteryEntityId": "",

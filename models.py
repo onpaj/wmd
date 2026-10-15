@@ -60,9 +60,7 @@ class StravaMeals(BaseModel):
 
 
 class GardenTemps(BaseModel):
-    glasshouse: float | None = None
     coop: float | None = None
-    glasshouse_humidity: float | None = None
     coop_humidity: float | None = None
 
 

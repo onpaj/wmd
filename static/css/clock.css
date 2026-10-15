@@ -93,3 +93,8 @@
   text-overflow: ellipsis;
   margin-bottom: 0.5rem;
 }
+
+#clock-nameday .nameday-favorite {
+  color: #FFC107;
+  font-weight: 700;
+}

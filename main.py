@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from cache import Cache
 from config import load_config
-from models import DashboardData
+from models import DashboardData, FavoriteName
 from models import WeatherDay as WeatherDayModel
 from sources.calendar import get_events, get_events_per_calendar, get_mini_cal_events
 from sources.ms365 import get_ms365_events
@@ -327,6 +327,9 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             outdoor_temp=cache.get("outdoor_temp", return_stale=True),
             garden_temps=cache.get("garden_temps", return_stale=True),
             car=cache.get("car", return_stale=True),
+            favorite_names=[
+                FavoriteName(name=f.name, name_day=f.name_day) for f in config.display.favorite_names
+            ],
             photo_interval_seconds=config.icloud.photo_interval_seconds,
             server_time=datetime.now(timezone.utc),
         )

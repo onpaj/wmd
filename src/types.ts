@@ -54,6 +54,11 @@ export interface GardenTemps {
   coop_humidity: number | null;
 }
 
+export interface FavoriteName {
+  name: string;
+  name_day: string;
+}
+
 export interface CarStatus {
   battery_percent: number;
   range_km: number | null;
@@ -70,6 +75,7 @@ export interface DashboardData {
   outdoor_temp: number | null;
   garden_temps: GardenTemps | null;
   car: CarStatus | null;
+  favorite_names: FavoriteName[];
   photo_interval_seconds: number;
   server_time: string;
 }

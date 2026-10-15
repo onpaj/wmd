@@ -29,7 +29,8 @@
   "display": {
     "calendarDaysAhead": 2,
     "weatherDays": 5,
-    "sleepHours": { "start": "21:00", "end": "06:15" }
+    "sleepHours": { "start": "21:00", "end": "06:15" },
+    "favoriteNames": ["Tereza", "Ondrej", { "name": "Ileana", "nameDay": "Ilona" }]
   },
   "strava": {
     "email": "",

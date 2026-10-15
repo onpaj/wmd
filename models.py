@@ -70,6 +70,11 @@ class CarStatus(BaseModel):
     is_charging: bool = False
 
 
+class FavoriteName(BaseModel):
+    name: str
+    name_day: str
+
+
 class DashboardData(BaseModel):
     photos: list[Photo]
     events: list[CalendarEvent]
@@ -80,5 +85,6 @@ class DashboardData(BaseModel):
     outdoor_temp: float | None
     garden_temps: GardenTemps | None = None
     car: CarStatus | None = None
+    favorite_names: list[FavoriteName] = []
     photo_interval_seconds: int
     server_time: datetime

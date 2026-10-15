@@ -119,8 +119,10 @@ systemd: wmd-browser
 - Outdoor temperature from Home Assistant sensor
 - Meal display (soup + lunch) for today/tomorrow from HA entities
 - Switches to tomorrow's meals after 12:30
-- Czech name day ("Svátek: …") on its own line under the clock, from a static table in `src/data/namedays.ts`
-  (no backend/config); blank on name-less public holidays
+- Czech name day ("Svátek: …") on its own line under the clock, from a static table in `src/data/namedays.ts`;
+  blank on name-less public holidays. `display.favoriteNames` highlights family names in amber
+  (case/diacritics-insensitive); a name missing from the Czech calendar can borrow another's day
+  via `{ "name": "Ileana", "nameDay": "Ilona" }`
 
 ### Home Assistant Integration
 - Fetches arbitrary entity states via REST API
@@ -164,7 +166,8 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
   },
   "display": {
     "calendarDaysAhead": 2,
-    "weatherDays": 5
+    "weatherDays": 5,
+    "favoriteNames": ["Tereza", { "name": "Ileana", "nameDay": "Ilona" }]
   },
   "ms365": {
     "tenantId": "...",

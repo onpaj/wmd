@@ -12,7 +12,11 @@ def config_file(tmp_path):
         "calendars": [],
         "weather": {"provider": "openmeteo", "latitude": 50.07, "longitude": 14.43},
         "homeAssistant": {"url": "http://homeassistant.local:8123", "token": "", "entities": []},
-        "display": {"calendarDaysAhead": 2, "weatherDays": 5},
+        "display": {
+            "calendarDaysAhead": 2,
+            "weatherDays": 5,
+            "favoriteNames": ["Tereza", {"name": "Ileana", "nameDay": "Ilona"}],
+        },
     }
     p = tmp_path / "config.json"
     p.write_text(json.dumps(config))
@@ -36,6 +40,16 @@ async def test_api_data_returns_200(app):
     assert "ha_entities" in data
     assert "photo_interval_seconds" in data
     assert "server_time" in data
+
+
+async def test_api_data_includes_favorite_names(app):
+    async with httpx.AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/data")
+
+    assert response.json()["favorite_names"] == [
+        {"name": "Tereza", "name_day": "Tereza"},
+        {"name": "Ileana", "name_day": "Ilona"},
+    ]
 
 
 async def test_static_index_served(app):

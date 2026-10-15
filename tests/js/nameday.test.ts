@@ -1,35 +1,71 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatNameDay } from '../../src/modules/nameday.ts';
+import { nameDayParts } from '../../src/modules/nameday.ts';
 
-test('shows the single name celebrated on a date', () => {
+const plain = (text: string) => ({ text, isFavorite: false });
+const favorite = (text: string) => ({ text, isFavorite: true });
+
+test('lists the single name celebrated on a date', () => {
   // Act
-  const label = formatNameDay(new Date(2026, 11, 6));
+  const parts = nameDayParts(new Date(2026, 11, 6), []);
 
   // Assert
-  assert.equal(label, 'Svátek: Mikuláš');
+  assert.deepEqual(parts, [plain('Mikuláš')]);
 });
 
-test('joins several names celebrated on the same date', () => {
+test('lists every name celebrated on the same date', () => {
   // Act
-  const label = formatNameDay(new Date(2026, 0, 6));
+  const parts = nameDayParts(new Date(2026, 0, 6), []);
 
   // Assert
-  assert.equal(label, 'Svátek: Kašpar, Melichar, Baltazar');
+  assert.deepEqual(parts, [plain('Kašpar'), plain('Melichar'), plain('Baltazar')]);
 });
 
-test('returns an empty label on public holidays with no name', () => {
+test('returns nothing on public holidays with no name', () => {
   // Act
-  const label = formatNameDay(new Date(2026, 0, 1));
+  const parts = nameDayParts(new Date(2026, 0, 1), []);
 
   // Assert
-  assert.equal(label, '');
+  assert.deepEqual(parts, []);
 });
 
 test('covers the leap day', () => {
   // Act
-  const label = formatNameDay(new Date(2028, 1, 29));
+  const parts = nameDayParts(new Date(2028, 1, 29), []);
 
   // Assert
-  assert.equal(label, 'Svátek: Horymír');
+  assert.deepEqual(parts, [plain('Horymír')]);
+});
+
+test('marks a favorite name, ignoring case and diacritics', () => {
+  // Arrange
+  const favorites = [{ name: 'ondrej', name_day: 'ondrej' }];
+
+  // Act
+  const parts = nameDayParts(new Date(2026, 10, 30), favorites);
+
+  // Assert
+  assert.deepEqual(parts, [favorite('Ondřej')]);
+});
+
+test('shows a favorite in place of the calendar name whose day it shares', () => {
+  // Arrange
+  const favorites = [{ name: 'Ileana', name_day: 'Ilona' }];
+
+  // Act
+  const parts = nameDayParts(new Date(2026, 0, 20), favorites);
+
+  // Assert
+  assert.deepEqual(parts, [favorite('Ileana'), plain('Sebastián')]);
+});
+
+test('leaves names alone when no favorite matches', () => {
+  // Arrange
+  const favorites = [{ name: 'Petr', name_day: 'Petr' }];
+
+  // Act
+  const parts = nameDayParts(new Date(2026, 9, 15), favorites);
+
+  // Assert
+  assert.deepEqual(parts, [plain('Tereza'), plain('Terezie')]);
 });

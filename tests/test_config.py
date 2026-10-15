@@ -1,4 +1,5 @@
 import json
+import pytest
 from config import load_config
 
 
@@ -238,3 +239,37 @@ def test_car_entity_ids_default_to_empty(sample_config):
     assert cfg.home_assistant.car_battery_entity_id == ""
     assert cfg.home_assistant.car_range_entity_id == ""
     assert cfg.home_assistant.car_charging_entity_id == ""
+
+
+def _config_with_favorites(tmp_path, favorites) -> str:
+    from tests.conftest import SAMPLE_CONFIG
+
+    data = json.loads(json.dumps(SAMPLE_CONFIG))
+    data["display"]["favoriteNames"] = favorites
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(data))
+    return str(p)
+
+
+def test_loads_favorite_names_as_their_own_name_day(tmp_path):
+    cfg = load_config(_config_with_favorites(tmp_path, ["Tereza"]))
+
+    assert [(f.name, f.name_day) for f in cfg.display.favorite_names] == [("Tereza", "Tereza")]
+
+
+def test_loads_favorite_celebrating_another_names_day(tmp_path):
+    cfg = load_config(_config_with_favorites(tmp_path, [{"name": "Ileana", "nameDay": "Ilona"}]))
+
+    assert [(f.name, f.name_day) for f in cfg.display.favorite_names] == [("Ileana", "Ilona")]
+
+
+def test_favorite_names_default_to_empty(sample_config):
+    cfg = load_config(sample_config)
+
+    assert cfg.display.favorite_names == []
+
+
+@pytest.mark.parametrize("bad", ["", {"nameDay": "Ilona"}, {"name": ""}, 42])
+def test_rejects_malformed_favorite_names(tmp_path, bad):
+    with pytest.raises(ValueError, match="favoriteNames"):
+        load_config(_config_with_favorites(tmp_path, [bad]))

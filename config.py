@@ -56,11 +56,20 @@ class SleepHoursConfig:
     end: str    # "HH:MM"
 
 
+@dataclass(frozen=True)
+class FavoriteNameConfig:
+    """A name to highlight on its name day. ``name_day`` is the calendar name
+    whose day it shares — itself unless the name is not in the Czech calendar."""
+    name: str
+    name_day: str
+
+
 @dataclass
 class DisplayConfig:
     calendar_days_ahead: int
     weather_days: int
     sleep_hours: Optional[SleepHoursConfig] = None
+    favorite_names: list[FavoriteNameConfig] = field(default_factory=list)
 
 
 @dataclass
@@ -126,6 +135,18 @@ class AppConfig:
     strava: Optional[StravaConfig] = None
 
 
+def _parse_favorite_name(entry: object) -> FavoriteNameConfig:
+    """Accept ``"Tereza"`` or ``{"name": "Ileana", "nameDay": "Ilona"}``."""
+    if isinstance(entry, str) and entry.strip():
+        return FavoriteNameConfig(name=entry.strip(), name_day=entry.strip())
+    if isinstance(entry, dict):
+        name = str(entry.get("name", "")).strip()
+        name_day = str(entry.get("nameDay", name)).strip()
+        if name and name_day:
+            return FavoriteNameConfig(name=name, name_day=name_day)
+    raise ValueError(f"display.favoriteNames: invalid entry {entry!r}")
+
+
 def load_config(path: str = "config.json") -> AppConfig:
     with open(path) as f:
         data = json.load(f)
@@ -176,6 +197,7 @@ def load_config(path: str = "config.json") -> AppConfig:
         calendar_days_ahead=display_data["calendarDaysAhead"],
         weather_days=display_data["weatherDays"],
         sleep_hours=sleep_hours,
+        favorite_names=[_parse_favorite_name(f) for f in display_data.get("favoriteNames", [])],
     )
 
     mini_cal_data = data.get("miniCalendar", {})

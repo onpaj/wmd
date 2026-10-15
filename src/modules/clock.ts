@@ -1,11 +1,17 @@
-import { StravaMeals, StravaDay } from '../types';
-import { formatNameDay } from './nameday.ts';
+import { StravaMeals, StravaDay, FavoriteName } from '../types';
+import { nameDayParts } from './nameday.ts';
 
 let _soupEl: HTMLElement | null = null;
 let _lunchEl: HTMLElement | null = null;
 let _marksEl: HTMLElement | null = null;
 let _tempEl: HTMLElement | null = null;
 let _meals: StravaMeals | null = null;
+let _nameDayEl: HTMLElement | null = null;
+let _favoriteNames: readonly FavoriteName[] = [];
+let _renderedNameDay = '';
+
+const NAME_DAY_PREFIX = 'Svátek: ';
+const NAME_SEPARATOR = ', ';
 
 function isBeforeBreakingTime(breakingTime: string): boolean {
   const [h, m] = breakingTime.split(':').map(Number);
@@ -48,6 +54,31 @@ function renderMeals(): void {
   renderMarks(day ?? null);
 }
 
+/** Rebuilds the name-day line only when its content changes, not on every clock tick. */
+function renderNameDay(now: Date): void {
+  if (!_nameDayEl) return;
+  const parts = nameDayParts(now, _favoriteNames);
+  const signature = JSON.stringify(parts);
+  if (signature === _renderedNameDay) return;
+  _renderedNameDay = signature;
+
+  _nameDayEl.replaceChildren();
+  if (parts.length === 0) return;
+  _nameDayEl.append(NAME_DAY_PREFIX);
+  parts.forEach((part, i) => {
+    if (i > 0) _nameDayEl!.append(NAME_SEPARATOR);
+    const span = document.createElement('span');
+    span.textContent = part.text;
+    if (part.isFavorite) span.className = 'nameday-favorite';
+    _nameDayEl!.append(span);
+  });
+}
+
+export function updateFavoriteNames(favorites: readonly FavoriteName[]): void {
+  _favoriteNames = favorites;
+  renderNameDay(new Date());
+}
+
 export function updateMeals(meals: StravaMeals | null): void {
   _meals = meals;
   renderMeals();
@@ -73,8 +104,8 @@ export function startClock(container: HTMLElement): void {
   const mealsEl = document.createElement('div');
   mealsEl.id = 'clock-meals';
 
-  const nameDayEl = document.createElement('div');
-  nameDayEl.id = 'clock-nameday';
+  _nameDayEl = document.createElement('div');
+  _nameDayEl.id = 'clock-nameday';
 
   _marksEl = document.createElement('div');
   _marksEl.id = 'clock-meal-marks';
@@ -90,14 +121,14 @@ export function startClock(container: HTMLElement): void {
 
   mealTextEl.append(_soupEl, _lunchEl);
   mealsEl.append(_marksEl, mealTextEl);
-  container.append(topRowEl, nameDayEl, mealsEl);
+  container.append(topRowEl, _nameDayEl, mealsEl);
 
   function tick(): void {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     timeEl.textContent = `${hh}:${mm}`;
-    nameDayEl.textContent = formatNameDay(now);
+    renderNameDay(now);
     renderMeals();
   }
   tick();

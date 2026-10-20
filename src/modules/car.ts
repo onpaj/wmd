@@ -3,6 +3,7 @@ import type { CarStatus } from '../types';
 const LOW_BATTERY_PERCENT = 20;
 const CAR_ICON = '🚗';
 const CHARGING_ICON = '⚡';
+const PLUGGED_ICON = '🔌';
 
 export interface CarView {
   battery: string;
@@ -10,10 +11,16 @@ export interface CarView {
   isLow: boolean;
 }
 
+/** Charging implies plugged in, so the bolt wins; nothing is shown when the cable is out. */
+function cableIcon(car: CarStatus): string {
+  if (car.is_charging) return CHARGING_ICON;
+  return car.is_plugged_in ? PLUGGED_ICON : '';
+}
+
 export function formatCar(car: CarStatus | null): CarView | null {
   if (!car) return null;
   return {
-    battery: `${car.is_charging ? CHARGING_ICON : ''}${Math.round(car.battery_percent)} %`,
+    battery: `${cableIcon(car)}${Math.round(car.battery_percent)} %`,
     range: car.range_km !== null ? `${Math.round(car.range_km)} km` : '—',
     isLow: car.battery_percent < LOW_BATTERY_PERCENT,
   };

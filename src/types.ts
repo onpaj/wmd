@@ -63,6 +63,7 @@ export interface CarStatus {
   battery_percent: number;
   range_km: number | null;
   is_charging: boolean;
+  is_plugged_in: boolean;
 }
 
 export interface DashboardData {

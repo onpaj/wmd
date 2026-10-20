@@ -24,7 +24,8 @@
     "coopHumidityEntityId": "",
     "carBatteryEntityId": "",
     "carRangeEntityId": "",
-    "carChargingEntityId": ""
+    "carChargingEntityId": "",
+    "carPluggedEntityId": ""
   },
   "display": {
     "calendarDaysAhead": 2,

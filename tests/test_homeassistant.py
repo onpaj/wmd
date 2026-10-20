@@ -55,11 +55,14 @@ async def test_skips_unreachable_entity():
 HA = "http://homeassistant.local:8123/api/states"
 
 
-def make_car_cfg(battery: str = "sensor.car_battery", range_: str = "sensor.car_range", charging: str = "") -> AppConfig:
+def make_car_cfg(
+    battery: str = "sensor.car_battery", range_: str = "sensor.car_range", charging: str = "", plugged: str = ""
+) -> AppConfig:
     cfg = make_cfg([])
     cfg.home_assistant.car_battery_entity_id = battery
     cfg.home_assistant.car_range_entity_id = range_
     cfg.home_assistant.car_charging_entity_id = charging
+    cfg.home_assistant.car_plugged_entity_id = plugged
     return cfg
 
 
@@ -150,3 +153,29 @@ async def test_car_status_is_not_charging_when_charging_sensor_unreachable():
     result = await get_car_status(make_car_cfg(charging="sensor.car_charging"))
 
     assert result.is_charging is False
+
+
+@pytest.mark.parametrize("state, expected", [
+    ("on", True),
+    ("off", False),
+    ("unavailable", False),
+])
+async def test_car_status_reports_charge_cable_state(state, expected):
+    with respx.mock:
+        respx.get(f"{HA}/sensor.car_battery").mock(return_value=httpx.Response(200, json={"state": "60", "attributes": {}}))
+        respx.get(f"{HA}/sensor.car_range").mock(return_value=httpx.Response(200, json={"state": "300", "attributes": {}}))
+        respx.get(f"{HA}/binary_sensor.car_cable").mock(return_value=httpx.Response(200, json={"state": state, "attributes": {}}))
+
+        result = await get_car_status(make_car_cfg(plugged="binary_sensor.car_cable"))
+
+    assert result.is_plugged_in is expected
+
+
+@respx.mock
+async def test_car_status_is_not_plugged_in_when_cable_sensor_not_configured():
+    respx.get(f"{HA}/sensor.car_battery").mock(return_value=httpx.Response(200, json={"state": "60", "attributes": {}}))
+    respx.get(f"{HA}/sensor.car_range").mock(return_value=httpx.Response(200, json={"state": "300", "attributes": {}}))
+
+    result = await get_car_status(make_car_cfg())
+
+    assert result.is_plugged_in is False

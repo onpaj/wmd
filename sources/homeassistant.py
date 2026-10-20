@@ -9,6 +9,8 @@ from models import CarStatus, GardenTemps, HaEntity
 
 # Charging-sensor states that mean energy is (about to be) flowing into the car
 _CAR_CHARGING_STATES = frozenset({"charging", "starting"})
+# Charge-cable binary sensor state that means the cable is in the car
+_CAR_PLUGGED_STATES = frozenset({"on"})
 
 
 class CarStatusUnavailable(Exception):
@@ -45,11 +47,12 @@ async def _fetch_float(client: httpx.AsyncClient, ha_url: str, token: str, entit
     return value if math.isfinite(value) else None
 
 
-async def _fetch_is_charging(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str) -> bool:
+async def _fetch_state_in(client: httpx.AsyncClient, ha_url: str, token: str, entity_id: str, states: frozenset[str]) -> bool:
+    """True when the entity is configured, reachable and currently in one of `states`."""
     if not entity_id:
         return False
     entity = await _fetch_entity(client, ha_url, token, entity_id, "")
-    return entity is not None and entity.state in _CAR_CHARGING_STATES
+    return entity is not None and entity.state in states
 
 
 async def get_car_status(cfg: AppConfig) -> CarStatus | None:
@@ -58,14 +61,15 @@ async def get_car_status(cfg: AppConfig) -> CarStatus | None:
         return None
     ha_url = ha.url.rstrip("/")
     async with httpx.AsyncClient(timeout=10.0) as client:
-        battery, range_km, is_charging = await asyncio.gather(
+        battery, range_km, is_charging, is_plugged_in = await asyncio.gather(
             _fetch_float(client, ha_url, ha.token, ha.car_battery_entity_id),
             _fetch_float(client, ha_url, ha.token, ha.car_range_entity_id),
-            _fetch_is_charging(client, ha_url, ha.token, ha.car_charging_entity_id),
+            _fetch_state_in(client, ha_url, ha.token, ha.car_charging_entity_id, _CAR_CHARGING_STATES),
+            _fetch_state_in(client, ha_url, ha.token, ha.car_plugged_entity_id, _CAR_PLUGGED_STATES),
         )
     if battery is None:
         raise CarStatusUnavailable(ha.car_battery_entity_id)
-    return CarStatus(battery_percent=battery, range_km=range_km, is_charging=is_charging)
+    return CarStatus(battery_percent=battery, range_km=range_km, is_charging=is_charging, is_plugged_in=is_plugged_in)
 
 
 async def get_outdoor_temp(cfg: AppConfig) -> float | None:

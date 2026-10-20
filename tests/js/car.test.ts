@@ -4,7 +4,7 @@ import { formatCar } from '../../src/modules/car.ts';
 
 test('formats battery and range rounded to whole numbers', () => {
   // Act
-  const view = formatCar({ battery_percent: 52, range_km: 290.29347072, is_charging: false });
+  const view = formatCar({ battery_percent: 52, range_km: 290.29347072, is_charging: false, is_plugged_in: false });
 
   // Assert
   assert.deepEqual(view, { battery: '52 %', range: '290 km', isLow: false });
@@ -12,7 +12,7 @@ test('formats battery and range rounded to whole numbers', () => {
 
 test('shows a dash when range is unknown', () => {
   // Act
-  const view = formatCar({ battery_percent: 80, range_km: null, is_charging: false });
+  const view = formatCar({ battery_percent: 80, range_km: null, is_charging: false, is_plugged_in: false });
 
   // Assert
   assert.equal(view?.range, '—');
@@ -20,8 +20,8 @@ test('shows a dash when range is unknown', () => {
 
 test('flags the battery as low below the threshold', () => {
   // Act
-  const low = formatCar({ battery_percent: 19, range_km: 90, is_charging: false });
-  const ok = formatCar({ battery_percent: 20, range_km: 100, is_charging: false });
+  const low = formatCar({ battery_percent: 19, range_km: 90, is_charging: false, is_plugged_in: false });
+  const ok = formatCar({ battery_percent: 20, range_km: 100, is_charging: false, is_plugged_in: false });
 
   // Assert
   assert.equal(low?.isLow, true);
@@ -38,8 +38,16 @@ test('returns null when there is no car status', () => {
 
 test('prefixes the battery with a bolt while charging', () => {
   // Act
-  const view = formatCar({ battery_percent: 52, range_km: 290, is_charging: true });
+  const view = formatCar({ battery_percent: 52, range_km: 290, is_charging: true, is_plugged_in: true });
 
   // Assert
   assert.equal(view?.battery, '⚡52 %');
+});
+
+test('prefixes the battery with a plug while plugged in but not charging', () => {
+  // Act
+  const view = formatCar({ battery_percent: 52, range_km: 290, is_charging: false, is_plugged_in: true });
+
+  // Assert
+  assert.equal(view?.battery, '🔌52 %');
 });

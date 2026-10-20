@@ -42,6 +42,7 @@ class HomeAssistantConfig:
     car_battery_entity_id: str = ""
     car_range_entity_id: str = ""
     car_charging_entity_id: str = ""
+    car_plugged_entity_id: str = ""
 
 
 @dataclass
@@ -186,6 +187,7 @@ def load_config(path: str = "config.json") -> AppConfig:
         car_battery_entity_id=ha_data.get("carBatteryEntityId", ""),
         car_range_entity_id=ha_data.get("carRangeEntityId", ""),
         car_charging_entity_id=ha_data.get("carChargingEntityId", ""),
+        car_plugged_entity_id=ha_data.get("carPluggedEntityId", ""),
     )
 
     display_data = data["display"]

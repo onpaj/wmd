@@ -1,5 +1,6 @@
 import asyncio
 import glob
+import hmac
 import logging
 import os
 import subprocess
@@ -9,7 +10,7 @@ from zoneinfo import ZoneInfo
 _PRAGUE = ZoneInfo("Europe/Prague")
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -18,6 +19,7 @@ from config import load_config
 from models import DashboardData, FavoriteName
 from models import WeatherDay as WeatherDayModel
 from sources.calendar import get_events, get_events_per_calendar, get_mini_cal_events
+from sources.calendar_uploads import InvalidCalendarUpload, save_upload
 from sources.ms365 import get_ms365_events
 from sources.homeassistant import get_car_status, get_entities, get_garden_temps, get_outdoor_temp
 from sources.icloud import get_photo_url, get_photos
@@ -58,6 +60,10 @@ _FETCH_TIMEOUT: float = 240.0
 _CALENDAR_STALE_SECONDS: int = 86400
 _DEFAULT_STALE_SECONDS: int = 3600
 _CALENDAR_CACHE_KEYS: frozenset[str] = frozenset({"events", "mini_cal_events"})
+
+# Real iCloud exports run to a few MB; this leaves headroom without letting
+# a runaway client fill the Pi's SD card.
+MAX_CALENDAR_UPLOAD_BYTES: int = 20 * 1024 * 1024
 
 
 def _stale_seconds_for(key: str) -> int:
@@ -270,38 +276,46 @@ def create_app(config_path: str = "config.json") -> FastAPI:
                 last_applied_at = now
             await asyncio.sleep(_LOOP_TICK_SECONDS)
 
+    async def _fetch_all_events():
+        per_cal, window_start = await get_events_per_calendar(config)
+        combined = []
+        for i, (cal, result) in enumerate(zip(config.calendars, per_cal)):
+            key = f"ics_cal_{i}"
+            if isinstance(result, BaseException):
+                logger.warning("Calendar '%s' fetch failed: %s", cal.name, result)
+                combined.extend(cache.get(key, return_stale=True) or [])
+            else:
+                cache.set(key, result, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
+                combined.extend(result)
+
+        try:
+            ms365 = await get_ms365_events(config)
+            cache.set("ms365_cal", ms365, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
+            combined.extend(ms365)
+        except Exception as exc:
+            logger.warning("MS365 calendar fetch failed: %s", exc)
+            combined.extend(cache.get("ms365_cal", return_stale=True) or [])
+
+        clamped = []
+        for ev in combined:
+            if ev.start < window_start < ev.end:
+                ev = ev.model_copy(update={"start": window_start})
+            clamped.append(ev)
+        clamped.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
+        return clamped
+
+    async def _refresh_events_now() -> None:
+        """Rebuild the merged events cache right away (after an upload)."""
+        try:
+            events = await asyncio.wait_for(_fetch_all_events(), timeout=_FETCH_TIMEOUT)
+            cache.set("events", events, _TTLS["events"], stale_seconds=_stale_seconds_for("events"))
+        except Exception:
+            logger.exception("Events refresh after calendar upload failed")
+
     app.state.populate_cache = _populate_cache
 
     @app.on_event("startup")
     async def startup() -> None:
-        async def _fetch_all_events():
-            per_cal, window_start = await get_events_per_calendar(config)
-            combined = []
-            for i, (cal, result) in enumerate(zip(config.calendars, per_cal)):
-                key = f"ics_cal_{i}"
-                if isinstance(result, BaseException):
-                    logger.warning("Calendar '%s' fetch failed: %s", cal.name, result)
-                    combined.extend(cache.get(key, return_stale=True) or [])
-                else:
-                    cache.set(key, result, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
-                    combined.extend(result)
-
-            try:
-                ms365 = await get_ms365_events(config)
-                cache.set("ms365_cal", ms365, _TTLS["events"], stale_seconds=_CALENDAR_STALE_SECONDS)
-                combined.extend(ms365)
-            except Exception as exc:
-                logger.warning("MS365 calendar fetch failed: %s", exc)
-                combined.extend(cache.get("ms365_cal", return_stale=True) or [])
-
-            clamped = []
-            for ev in combined:
-                if ev.start < window_start < ev.end:
-                    ev = ev.model_copy(update={"start": window_start})
-                clamped.append(ev)
-            clamped.sort(key=lambda e: (e.start.date(), not e.all_day, e.start))
-            return clamped
-
         app.state.startup_task = asyncio.create_task(_populate_cache())
         asyncio.create_task(_refresh_loop("photos", lambda: get_photos(config), _TTLS["photos"]))
         asyncio.create_task(_refresh_loop("events", _fetch_all_events, _TTLS["events"]))
@@ -333,6 +347,34 @@ def create_app(config_path: str = "config.json") -> FastAPI:
             photo_interval_seconds=config.icloud.photo_interval_seconds,
             server_time=datetime.now(timezone.utc),
         )
+
+    def _uploadable_calendar(name: str, authorization: str | None):
+        cal = next((c for c in config.calendars if c.name == name and c.upload_token), None)
+        if cal is None:
+            raise HTTPException(status_code=404, detail="Calendar not found or uploads not enabled")
+        expected = f"Bearer {cal.upload_token}"
+        if not authorization or not hmac.compare_digest(authorization.encode(), expected.encode()):
+            raise HTTPException(status_code=401, detail="Invalid or missing upload token")
+        return cal
+
+    # PUT is the natural verb (it replaces the file); POST is accepted for
+    # upload tools that cannot send PUT.
+    @app.api_route("/api/calendars/{name}/ics", methods=["PUT", "POST"])
+    async def api_upload_calendar(name: str, request: Request) -> dict:
+        cal = _uploadable_calendar(name, request.headers.get("authorization"))
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > MAX_CALENDAR_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Calendar file too large")
+        body = await request.body()
+        if len(body) > MAX_CALENDAR_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Calendar file too large")
+        try:
+            event_count = await asyncio.to_thread(save_upload, config.upload_dir, cal.name, body)
+        except InvalidCalendarUpload as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        logger.info("Calendar '%s' uploaded: %d bytes, %d events", cal.name, len(body), event_count)
+        asyncio.create_task(_refresh_events_now())
+        return {"calendar": cal.name, "events": event_count}
 
     @app.get("/api/photo/{photo_id}")
     async def api_photo(photo_id: str) -> StreamingResponse:

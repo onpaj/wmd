@@ -93,6 +93,11 @@ systemd: wmd-browser
 - `showAsBusy: true` replaces event titles with "Meeting" and drops the location, for
   published work feeds that should occupy their slot without revealing subjects.
   `excludePatterns` are matched against the real subject first, so filtering still works.
+- Pushed .ics uploads: a calendar with `uploadToken` accepts
+  `PUT` (or `POST`) `/api/calendars/{name}/ics` (raw body, `Authorization: Bearer <token>`, max 20 MB).
+  The file is validated, saved to `data/uploads/` (`uploadDir`), and replaces that calendar's
+  `url` feed (`url` may be empty for upload-only calendars); the events cache refreshes at once.
+  Used for the 8am.com work calendar ("Blue"), whose public feed is free/busy only.
 - Microsoft 365 calendar integration via OAuth2 client credentials (Graph API)
   - `ms365.users` reads each mailbox's **default** calendar
   - `ms365.calendars` reads a **named** calendar inside a mailbox (shared/external work calendars).
@@ -144,7 +149,8 @@ Runtime config lives in `config.json` (not committed — copy from `config.examp
     "photoIntervalSeconds": 30
   },
   "calendars": [
-    { "name": "Family", "url": "https://...", "color": "#4CAF50", "excludePatterns": [], "showAsBusy": false }
+    { "name": "Family", "url": "https://...", "color": "#4CAF50", "excludePatterns": [], "showAsBusy": false },
+    { "name": "Work", "url": "", "color": "#2196F3", "showAsBusy": true, "uploadToken": "..." }
   ],
   "weather": {
     "provider": "metno",

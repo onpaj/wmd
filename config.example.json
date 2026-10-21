@@ -9,6 +9,13 @@
       "url": "https://example.com/calendar.ics",
       "color": "#4CAF50",
       "excludePatterns": []
+    },
+    {
+      "name": "Work",
+      "url": "",
+      "color": "#2196F3",
+      "showAsBusy": true,
+      "uploadToken": "change-me-long-random-string"
     }
   ],
   "weather": {

@@ -273,3 +273,26 @@ def test_favorite_names_default_to_empty(sample_config):
 def test_rejects_malformed_favorite_names(tmp_path, bad):
     with pytest.raises(ValueError, match="favoriteNames"):
         load_config(_config_with_favorites(tmp_path, [bad]))
+
+
+def _write_calendars(tmp_path, calendars):
+    from tests.conftest import SAMPLE_CONFIG
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps({**SAMPLE_CONFIG, "calendars": calendars}))
+    return str(p)
+
+
+def test_calendar_upload_token_allows_missing_url(tmp_path):
+    path = _write_calendars(tmp_path, [{"name": "Blue", "color": "#2196F3", "uploadToken": "t"}])
+
+    cal = load_config(path).calendars[0]
+
+    assert cal.url == ""
+    assert cal.upload_token == "t"
+
+
+def test_calendar_without_url_or_upload_token_is_rejected(tmp_path):
+    path = _write_calendars(tmp_path, [{"name": "Blue", "color": "#2196F3"}])
+
+    with pytest.raises(ValueError, match="Blue"):
+        load_config(path)

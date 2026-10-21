@@ -11,6 +11,7 @@ from icalendar import Calendar
 
 from config import AppConfig, CalendarConfig
 from models import BUSY_LABEL, CalendarEvent
+from sources.calendar_uploads import read_upload
 
 # Floating times (no "Z", no TZID) are local wall-clock time per RFC 5545.
 # Apps like ČD "Můj vlak" emit them, so they must be read in the wall's zone.
@@ -209,20 +210,35 @@ def _parse_ics(
     return events
 
 
+async def _load_ics(client: httpx.AsyncClient, cal_cfg: CalendarConfig, upload_dir: str) -> bytes | None:
+    """An uploaded file wins over the URL feed; None when there is neither."""
+    if cal_cfg.upload_token:
+        uploaded = await asyncio.to_thread(read_upload, upload_dir, cal_cfg.name)
+        if uploaded is not None:
+            return uploaded
+    if not cal_cfg.url:
+        return None
+    resp = await client.get(cal_cfg.url)
+    resp.raise_for_status()
+    return resp.content
+
+
 async def _fetch_calendar(
     client: httpx.AsyncClient,
     cal_cfg: CalendarConfig,
     window_start: datetime,
     window_end: datetime,
+    upload_dir: str = "",
 ) -> list[CalendarEvent]:
-    resp = await client.get(cal_cfg.url)
-    resp.raise_for_status()
+    content = await _load_ics(client, cal_cfg, upload_dir)
+    if content is None:
+        return []
     # Parsing is CPU-bound and slow for real feeds (a 2 MB iCloud export takes
     # ~20s on a Raspberry Pi). Running it inline would block the event loop and
     # starve the sibling calendar fetches until their httpx timeout elapsed,
     # which surfaced as spurious ConnectTimeouts on unrelated calendars.
     return await asyncio.to_thread(
-        _parse_ics, resp.content, cal_cfg, window_start, window_end
+        _parse_ics, content, cal_cfg, window_start, window_end
     )
 
 
@@ -245,7 +261,7 @@ async def get_events_per_calendar(cfg: AppConfig) -> tuple[list[list[CalendarEve
     window_end = window_start + timedelta(days=cfg.display.calendar_days_ahead + 1)
     async with httpx.AsyncClient(timeout=20.0) as client:
         results = list(await asyncio.gather(
-            *[_fetch_calendar(client, cal, window_start, window_end) for cal in cfg.calendars],
+            *[_fetch_calendar(client, cal, window_start, window_end, cfg.upload_dir) for cal in cfg.calendars],
             return_exceptions=True,
         ))
     return results, window_start

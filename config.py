@@ -2,6 +2,9 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional
 
+# Where uploaded calendar .ics files live (relative to the server's cwd).
+DEFAULT_UPLOAD_DIR = "data/uploads"
+
 
 @dataclass
 class ICloudConfig:
@@ -16,6 +19,9 @@ class CalendarConfig:
     color: str
     exclude_patterns: list[str] = field(default_factory=list)
     show_as_busy: bool = False
+    # Non-empty enables PUT /api/calendars/{name}/ics; an uploaded file then
+    # replaces the URL feed (which may be empty for upload-only calendars).
+    upload_token: str = ""
 
 
 @dataclass
@@ -134,6 +140,7 @@ class AppConfig:
     mini_calendar: MiniCalendarConfig = field(default_factory=lambda: MiniCalendarConfig(url="", color="#FFC107"))
     ms365: Optional[Ms365Config] = None
     strava: Optional[StravaConfig] = None
+    upload_dir: str = DEFAULT_UPLOAD_DIR
 
 
 def _parse_favorite_name(entry: object) -> FavoriteNameConfig:
@@ -148,6 +155,20 @@ def _parse_favorite_name(entry: object) -> FavoriteNameConfig:
     raise ValueError(f"display.favoriteNames: invalid entry {entry!r}")
 
 
+def _parse_calendar(c: dict) -> CalendarConfig:
+    cal = CalendarConfig(
+        name=c["name"],
+        url=c.get("url", ""),
+        color=c["color"],
+        exclude_patterns=c.get("excludePatterns", []),
+        show_as_busy=c.get("showAsBusy", False),
+        upload_token=c.get("uploadToken", ""),
+    )
+    if not cal.url and not cal.upload_token:
+        raise ValueError(f"calendars: '{cal.name}' needs a url or an uploadToken")
+    return cal
+
+
 def load_config(path: str = "config.json") -> AppConfig:
     with open(path) as f:
         data = json.load(f)
@@ -158,16 +179,7 @@ def load_config(path: str = "config.json") -> AppConfig:
         photo_interval_seconds=icloud_data["photoIntervalSeconds"],
     )
 
-    calendars = [
-        CalendarConfig(
-            name=c["name"],
-            url=c["url"],
-            color=c["color"],
-            exclude_patterns=c.get("excludePatterns", []),
-            show_as_busy=c.get("showAsBusy", False),
-        )
-        for c in data.get("calendars", [])
-    ]
+    calendars = [_parse_calendar(c) for c in data.get("calendars", [])]
 
     weather_data = data["weather"]
     weather = WeatherConfig(
@@ -257,4 +269,5 @@ def load_config(path: str = "config.json") -> AppConfig:
         mini_calendar=mini_calendar,
         ms365=ms365,
         strava=strava,
+        upload_dir=data.get("uploadDir", DEFAULT_UPLOAD_DIR),
     )

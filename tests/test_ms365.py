@@ -299,3 +299,36 @@ async def test_named_calendar_failure_does_not_drop_user_events():
         events = await get_ms365_events(cfg)
 
     assert [e.title for e in events] == ["Team Meeting"]
+
+
+@respx.mock
+async def test_events_carry_availability_status_from_show_as_and_response():
+    from sources.ms365 import get_ms365_events
+    # Arrange
+    def ev(subject: str, eid: str, show_as: str, response: str) -> dict:
+        item = _graph_event(subject, "2026-04-07T10:00:00.0000000", "2026-04-07T11:00:00.0000000", eid=eid)
+        return {**item, "showAs": show_as, "responseStatus": {"response": response}}
+
+    respx.post(TOKEN_URL).mock(return_value=_token_mock())
+    respx.get(GRAPH_CAL).mock(return_value=_events_mock([
+        ev("Accepted", "e1", "busy", "accepted"),
+        ev("Maybe", "e2", "tentative", "tentativelyAccepted"),
+        ev("Unanswered", "e3", "busy", "notResponded"),
+        ev("Free", "e4", "free", "organizer"),
+        ev("Away", "e5", "oof", "none"),
+        _graph_event("Legacy", "2026-04-07T10:00:00.0000000", "2026-04-07T11:00:00.0000000", eid="e6"),
+    ]))
+
+    # Act
+    with mock.patch("sources.ms365._now_utc", return_value=FIXED_NOW):
+        events = await get_ms365_events(make_config())
+
+    # Assert
+    assert {e.title: e.status for e in events} == {
+        "Accepted": "busy",
+        "Maybe": "tentative",
+        "Unanswered": "tentative",
+        "Free": "free",
+        "Away": "busy",
+        "Legacy": "busy",
+    }

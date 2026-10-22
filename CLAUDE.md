@@ -93,6 +93,9 @@ systemd: wmd-browser
 - `showAsBusy: true` replaces event titles with "Meeting" and drops the location, for
   published work feeds that should occupy their slot without revealing subjects.
   `excludePatterns` are matched against the real subject first, so filtering still works.
+- Availability styling: tentative events (ICS `STATUS:TENTATIVE`; Graph `showAs: tentative` or a
+  tentative/unanswered response) get a hatched, dashed row; free ones (ICS `TRANSP:TRANSPARENT`,
+  Graph `showAs: free`) are outline-only and dimmed. Carried as `CalendarEvent.status`.
 - Pushed .ics uploads: a calendar with `uploadToken` accepts
   `PUT` (or `POST`) `/api/calendars/{name}/ics` (raw body, `Authorization: Bearer <token>`, max 20 MB).
   The file is validated, saved to `data/uploads/` (`uploadDir`), and replaces that calendar's

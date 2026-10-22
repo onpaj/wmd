@@ -90,3 +90,43 @@
   text-align: right;
   margin-top: 0.1rem;
 }
+
+/* Tentative or unanswered: hatched overlay and dashed edge, like Outlook.
+   An overlay (not background) so it also works on multi-calendar gradient rows;
+   isolation + z-index -1 keep the stripes above the fill but behind the text. */
+.cal-event--tentative {
+  position: relative;
+  isolation: isolate;
+  border-left-style: dashed;
+}
+
+.cal-event--tentative::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.28) 0 6px,
+    transparent 6px 14px
+  );
+}
+
+.cal-event--tentative .cal-title {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Shown as free: outline only, no fill, dimmed text. */
+.cal-event--free {
+  background: transparent;
+  outline: 1px solid color-mix(in srgb, var(--cal-color, #4CAF50) 55%, transparent);
+  outline-offset: -1px;
+}
+
+.cal-event--free .cal-title,
+.cal-event--free .cal-time-start {
+  color: rgba(255, 255, 255, 0.55);
+}

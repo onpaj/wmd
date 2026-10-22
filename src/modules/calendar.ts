@@ -1,6 +1,17 @@
-import { CalendarEvent } from '../types';
+import type { CalendarEvent, EventStatus } from '../types';
 
 const CZECH_DAYS = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
+
+const STATUS_CLASSES: Record<EventStatus, string | null> = {
+  busy: null,
+  tentative: 'cal-event--tentative',
+  free: 'cal-event--free',
+};
+
+/** Modifier class that styles a row by availability; null for a plain busy event. */
+export function statusClass(status: EventStatus | undefined): string | null {
+  return STATUS_CLASSES[status ?? 'busy'];
+}
 
 type MergedEvent = CalendarEvent & { colors: string[] };
 
@@ -75,6 +86,8 @@ export function render(events: CalendarEvent[], container: HTMLElement): void {
     for (const ev of mergeByTimeslot(dayEvents)) {
       const row = document.createElement('div');
       row.className = 'cal-event';
+      const modifier = statusClass(ev.status);
+      if (modifier) row.classList.add(modifier);
 
       if (ev.colors.length === 1) {
         row.style.setProperty('--cal-color', ev.colors[0]);

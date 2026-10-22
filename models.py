@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -7,6 +9,10 @@ from pydantic import BaseModel
 # ``showAsBusy`` — work items occupy their slot on the wall display
 # without revealing what they are.
 BUSY_LABEL = "Meeting"
+
+# How an event occupies its slot: a confirmed commitment, a tentative/unanswered
+# one, or time that is blocked but still shown as free.
+EventStatus = Literal["busy", "tentative", "free"]
 
 class Photo(BaseModel):
     id: str
@@ -23,6 +29,7 @@ class CalendarEvent(BaseModel):
     calendar_name: str
     color: str
     location: str | None = None
+    status: EventStatus = "busy"
 
 
 class WeatherDay(BaseModel):

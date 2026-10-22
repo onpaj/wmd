@@ -4,6 +4,8 @@ export interface Photo {
   date?: string;
 }
 
+export type EventStatus = 'busy' | 'tentative' | 'free';
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -13,6 +15,7 @@ export interface CalendarEvent {
   calendar_name: string;
   color: string;
   location?: string | null;
+  status?: EventStatus;
 }
 
 export interface WeatherDay {

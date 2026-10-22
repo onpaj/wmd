@@ -343,3 +343,58 @@ async def test_floating_recurring_event_keeps_wall_clock_and_honours_exdate():
         datetime(2026, 10, 8, 7, 0, tzinfo=timezone.utc),
         datetime(2026, 10, 10, 7, 0, tzinfo=timezone.utc),
     ]
+
+
+# --- Availability status (tentative / free) ----------------------------------
+
+STATUS_ICS = b"""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:confirmed@test
+DTSTART:20260407T080000Z
+DTEND:20260407T090000Z
+SUMMARY:Confirmed
+END:VEVENT
+BEGIN:VEVENT
+UID:tentative@test
+DTSTART:20260407T100000Z
+DTEND:20260407T110000Z
+STATUS:TENTATIVE
+SUMMARY:Maybe
+END:VEVENT
+BEGIN:VEVENT
+UID:free@test
+DTSTART:20260407T120000Z
+DTEND:20260407T130000Z
+TRANSP:TRANSPARENT
+SUMMARY:Free slot
+END:VEVENT
+BEGIN:VEVENT
+UID:tentative-recurring@test
+DTSTART:20260407T140000Z
+DTEND:20260407T150000Z
+RRULE:FREQ=DAILY;COUNT=2
+STATUS:TENTATIVE
+SUMMARY:Maybe daily
+END:VEVENT
+END:VCALENDAR"""
+
+
+@respx.mock
+async def test_ics_events_carry_availability_status():
+    # Arrange
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=STATUS_ICS))
+
+    # Act
+    with mock.patch("sources.calendar._now_utc", return_value=FIXED_NOW):
+        events = await get_events(make_config())
+
+    # Assert
+    status_by_title = {e.title: e.status for e in events}
+    assert status_by_title == {
+        "Confirmed": "busy",
+        "Maybe": "tentative",
+        "Free slot": "free",
+        "Maybe daily": "tentative",
+    }
+    assert [e.status for e in events if e.title == "Maybe daily"] == ["tentative", "tentative"]

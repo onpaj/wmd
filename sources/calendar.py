@@ -10,7 +10,7 @@ from dateutil.rrule import rrulestr
 from icalendar import Calendar
 
 from config import AppConfig, CalendarConfig
-from models import BUSY_LABEL, CalendarEvent
+from models import BUSY_LABEL, CalendarEvent, EventStatus
 from sources.calendar_uploads import read_upload
 
 # Floating times (no "Z", no TZID) are local wall-clock time per RFC 5545.
@@ -54,6 +54,15 @@ def _to_utc_datetime(dt: Any) -> datetime:
         return dt.astimezone(timezone.utc)
     # date (all-day)
     return datetime(dt.year, dt.month, dt.day, tzinfo=timezone.utc)
+
+
+def _event_status(component: Any) -> EventStatus:
+    """Tentative wins over free: an unconfirmed meeting matters more on the wall."""
+    if str(component.get("STATUS", "")).upper() == "TENTATIVE":
+        return "tentative"
+    if str(component.get("TRANSP", "")).upper() == "TRANSPARENT":
+        return "free"
+    return "busy"
 
 
 def _parse_ics(
@@ -101,6 +110,7 @@ def _parse_ics(
         summary = str(component.get("SUMMARY", ""))
         location_raw = component.get("LOCATION")
         location = str(location_raw) if location_raw else None
+        status = _event_status(component)
 
         if compiled and any(rx.search(summary) for rx in compiled):
             continue
@@ -161,6 +171,7 @@ def _parse_ics(
                             calendar_name=cal_cfg.name,
                             color=cal_cfg.color,
                             location=location,
+                            status=status,
                         )
                     )
             else:
@@ -184,6 +195,7 @@ def _parse_ics(
                             calendar_name=cal_cfg.name,
                             color=cal_cfg.color,
                             location=location,
+                            status=status,
                         )
                     )
         else:
@@ -204,6 +216,7 @@ def _parse_ics(
                     calendar_name=cal_cfg.name,
                     color=cal_cfg.color,
                     location=location,
+                    status=status,
                 )
             )
 

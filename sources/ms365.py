@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 from config import AppConfig, Ms365CalendarConfig
-from models import BUSY_LABEL, CalendarEvent
+from models import BUSY_LABEL, CalendarEvent, EventStatus
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,20 @@ def _parse_graph_datetime(dt_str: str, tz_str: str = "UTC") -> datetime:
     if tz_str.upper() == "UTC":
         return naive.replace(tzinfo=timezone.utc)
     return naive.replace(tzinfo=ZoneInfo(tz_str)).astimezone(timezone.utc)
+
+
+_TENTATIVE_RESPONSES = {"tentativelyAccepted", "notResponded"}
+
+
+def _graph_status(item: dict) -> EventStatus:
+    """Map Graph's showAs / own response onto the dashboard's availability status."""
+    show_as = item.get("showAs", "busy")
+    response = (item.get("responseStatus") or {}).get("response", "none")
+    if show_as == "tentative" or response in _TENTATIVE_RESPONSES:
+        return "tentative"
+    if show_as == "free":
+        return "free"
+    return "busy"
 
 
 async def _get_token(client: httpx.AsyncClient, tenant_id: str, client_id: str, client_secret: str) -> str:
@@ -80,6 +94,7 @@ async def _fetch_user_events(
                 all_day=item.get("isAllDay", False),
                 calendar_name=name,
                 color=color,
+                status=_graph_status(item),
             ))
         return events
     except Exception:
@@ -151,6 +166,7 @@ async def _fetch_named_calendar_events(
                 all_day=item.get("isAllDay", False),
                 calendar_name=cal_cfg.name,
                 color=cal_cfg.color,
+                status=_graph_status(item),
             ))
         return events
     except Exception as exc:

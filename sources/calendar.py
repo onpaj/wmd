@@ -121,7 +121,12 @@ def _parse_ics(
             summary = BUSY_LABEL
             location = None
 
-        if "RRULE" in component:
+        # A RECURRENCE-ID override is a single instance (RFC 5545). Some feeds
+        # leave a stale RRULE on it; expanding that would revive a series that
+        # has already ended, so only masters are expanded.
+        is_override = component.get("RECURRENCE-ID") is not None
+
+        if "RRULE" in component and not is_override:
             # Expand recurring events
             rrule_str = component["RRULE"].to_ical().decode()
             dtstart_dt = _to_utc_datetime(raw_start)

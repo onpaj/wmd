@@ -171,6 +171,41 @@ async def test_recurrence_id_override_no_duplicate():
     assert mm_events[0].start.date().isoformat() == "2026-04-09"
 
 
+# Shape of a real iCloud feed: the series ended (UNTIL) but a stale override
+# instance still carries its own open-ended RRULE.
+ENDED_SERIES_STALE_OVERRIDE_ICS = b"""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:riding-1
+SUMMARY:Riding
+DTSTART;TZID=Europe/Prague:20250930T153000
+DTEND;TZID=Europe/Prague:20250930T173000
+RRULE:FREQ=WEEKLY;UNTIL=20260518T215959Z;BYDAY=TU
+END:VEVENT
+BEGIN:VEVENT
+UID:riding-1
+SUMMARY:Riding
+RECURRENCE-ID;TZID=Europe/Prague:20251021T153000
+DTSTART;TZID=Europe/Prague:20251021T160000
+DTEND;TZID=Europe/Prague:20251021T180000
+RRULE:FREQ=WEEKLY;BYDAY=TU
+END:VEVENT
+END:VCALENDAR"""
+
+
+@respx.mock
+async def test_override_instance_rrule_is_not_expanded():
+    """A RECURRENCE-ID override is one instance; its RRULE must not revive an ended series."""
+    respx.get(CAL_URL).mock(return_value=httpx.Response(200, content=ENDED_SERIES_STALE_OVERRIDE_ICS))
+    cfg = make_config(calendar_days_ahead=2)
+    tuesday_after_series_end = datetime(2026, 11, 24, 0, 0, 0, tzinfo=timezone.utc)
+
+    with mock.patch("sources.calendar._now_utc", return_value=tuesday_after_series_end):
+        events = await get_events(cfg)
+
+    assert [e for e in events if e.title == "Riding"] == []
+
+
 @respx.mock
 async def test_parse_runs_off_the_event_loop_thread():
     """ICS parsing is CPU-heavy (10-20s for real feeds); it must not run on the event loop."""
